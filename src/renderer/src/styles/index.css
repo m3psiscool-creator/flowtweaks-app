@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ft-black: #0d0d0d;
+  --color-ft-orange: #ff5500;
+  --color-ft-white: #ffffff;
+
+  --font-display: 'Orbitron', sans-serif;
+  --font-heading: 'Bebas Neue', sans-serif;
+}
+
+body {
+  background-color: var(--color-ft-black);
+  color: var(--color-ft-white);
+  font-family: 'Orbitron', sans-serif;
+}
+
+h1,
+h2,
+h3,
+.ft-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
