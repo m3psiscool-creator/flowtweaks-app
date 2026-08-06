@@ -1,6 +1,83 @@
 import type { TweakDefinition } from '../schema'
 
 export const gpuTweaks: TweakDefinition[] = [
+  // Two NVIDIA tweaks below — deliberately not a parallel set to the four AMD ones. NVIDIA's real
+  // performance-relevant settings (Low Latency Mode / Reflex, Power Management Mode, Image
+  // Sharpening) live in a reverse-engineered binary profile database (nvdrsdb0.bin/nvdrsdb1.bin
+  // under ProgramData\NVIDIA Corporation\DRS), not the plain registry — there's no safe, verified
+  // way to write that format without either bundling NVAPI bindings or guessing at an undocumented
+  // binary layout, and getting it wrong risks corrupting the customer's actual driver profile
+  // database. The legacy registry-based workaround (PowerMizerEnable/PowerMizerLevel) was checked
+  // and ruled out too — confirmed removed from NVIDIA drivers after version 525, so it would ship
+  // as a silent no-op on any current install, the same problem the SvcHost RAM-scaling tweak had.
+  // What's left and genuinely safe: telemetry opt-out, cross-checked against two independent
+  // sources (a dedicated open-source "Disable Nvidia Telemetry" project and a how-to guide).
+  {
+    id: 'nvidia-disable-telemetry',
+    name: 'Disable NVIDIA Telemetry',
+    category: 'gpu',
+    whatItChanges: "Opts this PC out of NVIDIA's driver telemetry collection.",
+    whyItMayHelp: 'One less background data-collection process reporting home — a privacy opt-out, not a performance change.',
+    riskLevel: 'low',
+    fpsImpact: 'none',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: true,
+    compatibility: { gpuVendor: ['nvidia'] },
+    detect: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client',
+        valueName: 'OptInOrOutPreference',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ],
+    apply: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client',
+        valueName: 'OptInOrOutPreference',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ]
+  },
+  {
+    id: 'nvidia-disable-telemetry-container',
+    name: 'Disable NVIDIA Telemetry Container',
+    category: 'gpu',
+    whatItChanges: 'Stops and disables the NVIDIA Telemetry Container service, the background process that actually uploads driver telemetry.',
+    whyItMayHelp: 'The registry opt-out stops new data from being collected — this removes the background service that does the uploading, closing the loop.',
+    riskLevel: 'low',
+    fpsImpact: 'none',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: true,
+    compatibility: { gpuVendor: ['nvidia'] },
+    detect: [
+      {
+        type: 'service',
+        serviceName: 'NvTelemetryContainer',
+        desiredStartType: 'disabled',
+        disabledStartType: 'manual',
+        stopIfRunning: true
+      }
+    ],
+    apply: [
+      {
+        type: 'service',
+        serviceName: 'NvTelemetryContainer',
+        desiredStartType: 'disabled',
+        disabledStartType: 'manual',
+        stopIfRunning: true
+      }
+    ]
+  },
   {
     id: 'hags',
     name: 'Hardware-Accelerated GPU Scheduling',
