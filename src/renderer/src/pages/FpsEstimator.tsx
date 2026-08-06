@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ALL_TWEAKS } from '@data/tweaks'
 import { GAME_PROFILES } from '@data/gameProfiles'
+import { getGameSettings } from '@data/gameSettings'
 import { CATEGORY_COLORS, type FpsImpact } from '@data/schema'
 import { useScan } from '@renderer/hooks/useScan'
 import Gauge from '@renderer/components/Gauge'
-import GlassSelect from '@renderer/components/GlassSelect'
-import { IconGamepad, IconBolt } from '@renderer/components/icons'
+import { IconGamepad, IconBolt, IconInfo } from '@renderer/components/icons'
 
 const IMPACT_SCORE: Record<FpsImpact, number> = { none: 0, low: 1, medium: 2, high: 3 }
 // A shared ceiling across every profile, not a per-profile-normalized percentage. Normalizing by
@@ -47,6 +47,7 @@ export default function FpsEstimator(): React.JSX.Element {
   }, [])
 
   const profile = GAME_PROFILES.find((p) => p.id === profileId) ?? GAME_PROFILES[0]
+  const gameSettings = getGameSettings(profileId)
 
   const { score, availableTweaks } = useMemo(() => {
     if (!report) return { score: 0, availableTweaks: [] as { id: string; name: string; impact: FpsImpact; category: string }[] }
@@ -84,25 +85,39 @@ export default function FpsEstimator(): React.JSX.Element {
         number. Actual results depend entirely on your hardware and existing setup.
       </p>
 
-      <div className="ft-glass mt-6 flex flex-wrap items-center gap-3 p-4">
-        <IconGamepad className="h-5 w-5 text-ft-orange/70" />
-        <span className="text-sm text-white/50">Game mode</span>
-        <GlassSelect
-          value={profileId}
-          onChange={setProfileId}
-          options={GAME_PROFILES.map((p) => ({ value: p.id, label: p.name }))}
-        />
+      <div className="mt-6 flex items-center justify-between">
+        <span className="flex items-center gap-2 text-sm text-white/50">
+          <IconGamepad className="h-4 w-4 text-ft-orange/70" /> Click a game for its specific breakdown
+        </span>
         <button
           type="button"
           onClick={runScan}
           disabled={scanning}
-          className="ml-auto text-sm text-white/40 underline hover:text-white/70 disabled:opacity-40"
+          className="text-sm text-white/40 underline hover:text-white/70 disabled:opacity-40"
         >
           {scanning ? 'Scanning…' : report ? 'Rescan' : 'Scan This PC'}
         </button>
       </div>
 
-      <p className="mt-2 text-xs text-white/30">{profile.description}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {GAME_PROFILES.map((p) => {
+          const active = p.id === profileId
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setProfileId(p.id)}
+              className={`ft-heading rounded-lg border px-3.5 py-2 text-sm tracking-wide transition-all ${
+                active
+                  ? 'border-ft-orange bg-ft-orange/10 text-ft-orange shadow-[0_0_20px_-10px_rgba(255,85,0,0.6)]'
+                  : 'ft-hoverable-subtle border-white/12 bg-white/5 text-white/70'
+              }`}
+            >
+              {p.name}
+            </button>
+          )
+        })}
+      </div>
 
       {!report && !scanning && (
         <p className="mt-6 text-sm text-white/40">Scan this PC to see an estimate.</p>
@@ -119,6 +134,7 @@ export default function FpsEstimator(): React.JSX.Element {
               <p className="mt-1 text-sm text-white/50">
                 {tier.range} for {profile.name.toLowerCase()}
               </p>
+              <p className="mt-2 text-xs text-white/30">{profile.description}</p>
             </div>
           </div>
 
@@ -152,6 +168,31 @@ export default function FpsEstimator(): React.JSX.Element {
             relative guide, not a measured benchmark. Head to Optimizations to actually apply
             anything listed here.
           </p>
+        </div>
+      )}
+
+      {gameSettings && (
+        <div className="ft-glass mt-6 p-5">
+          <h2 className="ft-heading text-xl text-white/80">{profile.name}: What Actually Matters</h2>
+          <p className="mt-2 flex items-start gap-2 text-sm text-white/50">
+            <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
+            {gameSettings.engineNote}
+          </p>
+
+          <p className="mt-4 text-xs uppercase tracking-wide text-white/30">
+            In-game settings — informational only, Flow Tweaks doesn&apos;t touch game files
+          </p>
+          <div className="mt-2 flex flex-col gap-2.5">
+            {gameSettings.settings.map((s) => (
+              <div key={s.setting} className="ft-glass-solid p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <span className="text-sm font-semibold text-white">{s.setting}</span>
+                  <span className="ft-heading text-sm tracking-wide text-ft-orange">{s.value}</span>
+                </div>
+                <p className="mt-1 text-xs text-white/50">{s.why}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
