@@ -1,0 +1,155 @@
+FLOW TWEAKS - END USER LICENSE AGREEMENT & TERMS OF SERVICE
+Last updated: August 2026
+
+PLEASE READ THIS AGREEMENT CAREFULLY BEFORE INSTALLING OR USING THE FLOW
+TWEAKS SOFTWARE. BY CLICKING "I AGREE," DOWNLOADING, INSTALLING, OR USING
+THE SOFTWARE OR ANY RELATED SERVICES, YOU AGREE TO BE BOUND BY THE TERMS
+OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE SOFTWARE.
+
+1. PARTIES AND ACCEPTANCE
+This Agreement is between you ("Customer," "you") and Flow Tweaks, a sole
+proprietorship operating under the laws of the State of Missouri, United
+States ("Flow Tweaks," "we," "us," "our"). You must be at least 18 years
+old, or the age of majority in your jurisdiction, and have the legal
+authority to agree to this Agreement to use the Software. If you are
+under that age, you may only use the Software with the involvement and
+consent of a parent or legal guardian who agrees to be bound by this
+Agreement on your behalf.
+
+2. WHAT FLOW TWEAKS PROVIDES
+Flow Tweaks provides a Windows desktop application (the "Software") that
+inspects a customer's PC and applies optional, reversible performance-
+related changes to Windows settings, the registry, background services,
+startup behavior, and related system configuration (each a "Tweak"),
+chosen and initiated by you. The Software runs locally on your device and
+does not grant Flow Tweaks remote access to or control of your device.
+For console optimization plans, Flow Tweaks may provide guidance or
+perform work through a separately supervised session as agreed with you
+at the time of purchase; this Agreement's description of the Software
+applies specifically to the Windows desktop application.
+
+3. LICENSE GRANT
+Subject to your compliance with this Agreement, Flow Tweaks grants you a
+limited, non-exclusive, non-transferable, revocable license to download
+and use the Software on personal computers you own or control, solely
+for your own personal, non-commercial use. You may not: (a) copy, modify,
+or create derivative works of the Software; (b) reverse engineer,
+decompile, or disassemble the Software except to the extent such
+restriction is prohibited by applicable law; (c) redistribute, sell,
+lease, rent, or sublicense the Software; (d) use the Software to provide
+optimization services to third parties without Flow Tweaks' prior written
+consent; or (e) remove or alter any proprietary notices in the Software.
+
+4. YOUR RESPONSIBILITIES
+You are solely responsible for: (a) backing up your data and system
+before applying any Tweak; (b) ensuring you have the right to modify the
+computer on which you install the Software (for example, that it is not
+a work, school, or otherwise restricted device you don't have permission
+to modify); (c) reviewing each Tweak's description before applying it;
+and (d) any consequences of applying, disabling, or reverting a Tweak.
+
+5. RESTORE POINTS AND REVERSIBILITY
+The Software attempts to create a Windows System Restore point and record
+the prior value of each setting before applying a change, and provides
+tools to revert changes. This is a best-effort mechanism, not a
+guarantee. System Restore may be disabled, limited, or fail on your PC
+for reasons outside our control, and reverting a change does not
+guarantee your system will return to an identical prior state in every
+case.
+
+6. NO WARRANTY
+THE SOFTWARE AND ANY RELATED SERVICES ARE PROVIDED "AS IS" AND "AS
+AVAILABLE," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. FLOW TWEAKS DOES NOT
+WARRANT THAT THE SOFTWARE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE,
+THAT DEFECTS WILL BE CORRECTED, OR THAT THE SOFTWARE OR THE RESULTS OF
+ITS USE WILL MEET YOUR EXPECTATIONS. FLOW TWEAKS DOES NOT GUARANTEE ANY
+SPECIFIC INCREASE IN FRAME RATE, PERFORMANCE, OR ANY OTHER MEASURABLE
+OUTCOME -- ACTUAL RESULTS DEPEND ENTIRELY ON YOUR HARDWARE, SOFTWARE, AND
+EXISTING CONFIGURATION.
+
+7. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL FLOW
+TWEAKS, ITS OWNER, OR ANY AFFILIATES BE LIABLE FOR ANY INDIRECT,
+INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR
+ANY LOSS OF DATA, PROFITS, REVENUE, OR GOODWILL, ARISING OUT OF OR
+RELATED TO YOUR USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF FLOW
+TWEAKS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. THIS
+INCLUDES, WITHOUT LIMITATION: ANY DAMAGE TO OR FAILURE OF YOUR COMPUTER
+HARDWARE, OPERATING SYSTEM, FIRMWARE, OR PERIPHERALS; ANY DATA LOSS OR
+CORRUPTION; ANY VOIDED MANUFACTURER OR THIRD-PARTY WARRANTY RESULTING
+FROM SYSTEM MODIFICATIONS; ANY INCOMPATIBILITY WITH ANTI-CHEAT, DRM, OR
+OTHER THIRD-PARTY SOFTWARE; OR ANY DOWNTIME, LOST WORK, OR LOST GAMING
+SESSIONS. FLOW TWEAKS' TOTAL AGGREGATE LIABILITY TO YOU FOR ANY CLAIM
+ARISING OUT OF THIS AGREEMENT OR YOUR USE OF THE SOFTWARE WILL NOT EXCEED
+THE AMOUNT YOU ACTUALLY PAID FLOW TWEAKS IN THE 12 MONTHS PRECEDING THE
+CLAIM.
+SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF CERTAIN
+DAMAGES, SO SOME OF THE ABOVE LIMITATIONS MAY NOT APPLY TO YOU.
+
+8. ASSUMPTION OF RISK
+You acknowledge that modifying operating system settings, the Windows
+registry, drivers, power management, and background services carries an
+inherent risk of system instability, boot failure, data loss, a reduced
+security posture (for any security-related Tweak you choose to disable),
+incompatibility with games or anti-cheat systems, or voided hardware or
+software warranties. You voluntarily assume all such risks by choosing to
+apply any Tweak.
+
+9. INDEMNIFICATION
+You agree to indemnify, defend, and hold harmless Flow Tweaks and its
+owner from and against any claims, damages, losses, liabilities, costs,
+and expenses (including reasonable attorneys' fees) arising out of or
+related to your use of the Software, your violation of this Agreement, or
+your violation of any rights of a third party.
+
+10. THIRD-PARTY SOFTWARE AND ANTI-CHEAT
+Flow Tweaks does not modify game files, inject code into games, or
+provide any tool designed to circumvent anti-cheat systems. However, some
+Tweaks (such as scheduling, network, or driver-level changes) may
+interact with third-party anti-cheat or DRM software in ways Flow Tweaks
+cannot fully predict or control. You are responsible for understanding
+the policies of any game or platform you play before applying Tweaks.
+
+11. PAYMENTS AND REFUNDS
+Plans are one-time purchases processed securely through Stripe. Because
+access unlocks instantly upon payment, all sales are final except where
+required by applicable law or at Flow Tweaks' sole discretion. Access
+codes and plan unlocks are tied to the account/email used at purchase and
+are not transferable except at Flow Tweaks' discretion.
+
+12. SUPPORT
+Support is provided on a best-effort basis through our Discord server.
+Flow Tweaks reserves the right to refuse service or revoke access for
+abusive, fraudulent, or unlawful conduct.
+
+13. CHANGES TO THE SOFTWARE AND THIS AGREEMENT
+Flow Tweaks may update the Software and this Agreement from time to time.
+Continued use of the Software after an update constitutes acceptance of
+the revised Agreement. Material changes will be reflected by an updated
+"Last updated" date.
+
+14. TERMINATION
+This license is effective until terminated. Flow Tweaks may terminate
+this license at any time if you fail to comply with any term of this
+Agreement. Upon termination, you must cease using and uninstall the
+Software.
+
+15. GOVERNING LAW
+This Agreement is governed by the laws of the State of Missouri, United
+States, without regard to its conflict-of-laws principles. Any dispute
+arising out of this Agreement will be subject to the exclusive
+jurisdiction of the state and federal courts located in Missouri.
+
+16. ENTIRE AGREEMENT
+This Agreement constitutes the entire agreement between you and Flow
+Tweaks regarding the Software and supersedes all prior agreements and
+understandings on this subject.
+
+17. CONTACT
+Questions about this Agreement can be directed to Flow Tweaks via our
+Discord server.
+
+BY CLICKING "I AGREE" BELOW, YOU ACKNOWLEDGE THAT YOU HAVE READ,
+UNDERSTOOD, AND AGREE TO BE BOUND BY THIS AGREEMENT.
