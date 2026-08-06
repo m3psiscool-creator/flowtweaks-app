@@ -1,32 +1,20 @@
 import { useMemo, useState } from 'react'
-import { ALL_TWEAKS, getTweakById } from '@data/tweaks'
-import { APPLY_ENABLED_TWEAK_IDS, CHECKOUT_URL } from '@data/applyEnabled'
+import { ALL_TWEAKS } from '@data/tweaks'
+import { APPLY_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
 import { CATEGORY_LABELS, type Category } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
-import { useWheel } from '@renderer/hooks/useWheel'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
-import WheelSpinModal from '@renderer/components/WheelSpinModal'
 
 export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
   const { applying, result, apply, reset } = useApply()
-  const { state: wheelState, spin: wheelSpin } = useWheel()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
   const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
-  const [wheelModalOpen, setWheelModalOpen] = useState(false)
-
-  // Empty until the wheel is spun — every apply-enabled tweak is paid content until then, per the
-  // "free spin, no account" mechanic. Only ever grows by exactly the one wheel prize right now;
-  // real purchased licenses will merge into this same set once backend licensing exists.
-  const unlockedTweakIds = useMemo(
-    () => new Set(wheelState?.unlockedTweakId ? [wheelState.unlockedTweakId] : []),
-    [wheelState]
-  )
 
   const resultByTweakId = useMemo(() => {
     const map = new Map<string, TweakScanResult>()
@@ -51,20 +39,20 @@ export default function Optimizations(): React.JSX.Element {
       .filter((group) => group.tweaks.length > 0)
   }, [])
 
-  // Everything a click-to-select card could actually select right now: apply-enabled, unlocked,
-  // and — per TweakScanCard's own canSelect gate — compatible, not already-enabled, and not
-  // blocked on elevation. Run All reuses this exact set instead of guessing at eligibility
-  // separately, so "select everything selectable" and "Run All" can never disagree.
+  // Everything a click-to-select card could actually select right now: apply-enabled and — per
+  // TweakScanCard's own canSelect gate — compatible, not already-enabled, and not blocked on
+  // elevation. Run All reuses this exact set instead of guessing at eligibility separately, so
+  // "select everything selectable" and "Run All" can never disagree.
   const selectableTweakIds = useMemo(() => {
     if (!report) return new Set<string>()
     return new Set(
       ALL_TWEAKS.filter((tweak) => {
-        if (!APPLY_ENABLED_TWEAK_IDS.has(tweak.id) || !unlockedTweakIds.has(tweak.id)) return false
+        if (!APPLY_ENABLED_TWEAK_IDS.has(tweak.id)) return false
         const r = resultByTweakId.get(tweak.id)
         return (r?.compatible ?? true) && !r?.needsElevation && r?.currentState !== 'already-enabled'
       }).map((t) => t.id)
     )
-  }, [report, unlockedTweakIds, resultByTweakId])
+  }, [report, resultByTweakId])
 
   function toggle(tweakId: string): void {
     setSelected((prev) => {
@@ -142,27 +130,6 @@ export default function Optimizations(): React.JSX.Element {
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
-      {wheelState && !wheelState.spun && (
-        <div className="mt-4 flex items-center justify-between rounded border border-ft-orange/30 bg-ft-orange/10 p-3">
-          <p className="text-sm text-white">
-            🎡 You have a free tweak unlock waiting — no account, no cost.
-          </p>
-          <button
-            type="button"
-            onClick={() => setWheelModalOpen(true)}
-            className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-1.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
-          >
-            Spin Now
-          </button>
-        </div>
-      )}
-      {wheelState?.spun && wheelState.unlockedTweakId && (
-        <p className="mt-4 text-xs text-white/40">
-          Free unlock: {getTweakById(wheelState.unlockedTweakId)?.name ?? wheelState.unlockedTweakId} —
-          everything else needs the full package.
-        </p>
-      )}
-
       {report && !report.isElevated && (
         <p className="mt-4 rounded border border-ft-orange/30 bg-ft-orange/10 p-3 text-sm text-ft-orange">
           Not running as administrator — tweaks marked &quot;Needs Admin&quot; can be scanned but
@@ -211,7 +178,6 @@ export default function Optimizations(): React.JSX.Element {
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {tweaks.map((tweak) => {
                   const applyEnabled = APPLY_ENABLED_TWEAK_IDS.has(tweak.id)
-                  const unlocked = unlockedTweakIds.has(tweak.id)
                   const tweakResult = resultByTweakId.get(tweak.id)
                   return (
                     <TweakScanCard
@@ -219,12 +185,8 @@ export default function Optimizations(): React.JSX.Element {
                       tweak={tweak}
                       result={tweakResult}
                       applyUnavailable={!applyEnabled}
-                      freeUnlock={applyEnabled && unlocked}
-                      locked={
-                        applyEnabled && !unlocked ? { onUnlockClick: () => window.open(CHECKOUT_URL, '_blank') } : undefined
-                      }
                       selection={
-                        applyEnabled && unlocked
+                        applyEnabled
                           ? {
                               selected: selected.has(tweak.id),
                               onToggle: () => toggle(tweak.id),
@@ -255,10 +217,6 @@ export default function Optimizations(): React.JSX.Element {
           onConfirm={confirmDnsOverride}
           onCancel={() => setDnsOverrideModalOpen(false)}
         />
-      )}
-
-      {wheelModalOpen && (
-        <WheelSpinModal onSpin={wheelSpin} onWon={() => runScan()} onClose={() => setWheelModalOpen(false)} />
       )}
     </div>
   )

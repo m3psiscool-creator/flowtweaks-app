@@ -16,6 +16,12 @@ export function startUsagePush(window: BrowserWindow): void {
       return
     }
     const usage = await getSystemUsage()
+    // Window can be destroyed while the await above was in flight — re-check right before
+    // sending, or webContents.send throws "Object has been destroyed" as an unhandled rejection.
+    if (window.isDestroyed()) {
+      clearInterval(interval)
+      return
+    }
     window.webContents.send('system:usage', usage)
   }, USAGE_PUSH_INTERVAL_MS)
 
