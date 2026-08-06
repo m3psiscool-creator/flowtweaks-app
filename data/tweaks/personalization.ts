@@ -20,7 +20,8 @@ export const personalizationTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
         valueName: 'AppsUseLightTheme',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       },
       {
         type: 'registry',
@@ -28,7 +29,8 @@ export const personalizationTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
         valueName: 'SystemUsesLightTheme',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ],
     apply: [
@@ -38,7 +40,8 @@ export const personalizationTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
         valueName: 'AppsUseLightTheme',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       },
       {
         type: 'registry',
@@ -46,7 +49,8 @@ export const personalizationTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize',
         valueName: 'SystemUsesLightTheme',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ]
   }

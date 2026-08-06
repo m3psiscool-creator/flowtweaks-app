@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import { getSystemSpecs } from '../system/systemInfo'
 import { runScan } from '../tweaks/scan'
 import { runApplySession } from '../tweaks/applySession'
+import { runDisableSession } from '../tweaks/disableSession'
 import { getDnsOverrideInfoForTweak } from '../tweaks/dns/applyDnsTweak'
 import { getTweakById } from '../../../data/tweaks'
 import type { ApplyOptions } from '../../shared/ipc-types'
@@ -15,6 +16,8 @@ export function registerTweaksIpcHandlers(): void {
   ipcMain.handle('tweaks:apply', (_event, tweakIds: string[], options?: ApplyOptions) =>
     runApplySession(tweakIds, options)
   )
+
+  ipcMain.handle('tweaks:disable', (_event, tweakIds: string[]) => runDisableSession(tweakIds))
 
   ipcMain.handle('tweaks:getDnsOverrideInfo', (_event, tweakId: string) => {
     const tweak = getTweakById(tweakId)

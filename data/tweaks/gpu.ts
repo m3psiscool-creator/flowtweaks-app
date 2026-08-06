@@ -22,7 +22,8 @@ export const gpuTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers',
         valueName: 'HwSchMode',
         valueType: 'REG_DWORD',
-        desiredValue: 2
+        desiredValue: 2,
+        disabledValue: 1
       }
     ],
     apply: [
@@ -32,7 +33,8 @@ export const gpuTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers',
         valueName: 'HwSchMode',
         valueType: 'REG_DWORD',
-        desiredValue: 2
+        desiredValue: 2,
+        disabledValue: 1
       }
     ]
   }

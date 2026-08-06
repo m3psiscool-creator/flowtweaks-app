@@ -28,7 +28,8 @@ const diskCleanupCategoryOps: Operation[] = VOLUME_CACHE_CATEGORIES.map((categor
   path: `SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VolumeCaches\\${category}`,
   valueName: 'StateFlags0001',
   valueType: 'REG_DWORD',
-  desiredValue: 2
+  desiredValue: 2,
+  disabledValue: 0
 }))
 
 export const storageCleanupTweaks: TweakDefinition[] = [

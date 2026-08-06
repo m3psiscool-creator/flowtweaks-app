@@ -9,6 +9,7 @@ import type {
   BoostStatus,
   CreateRestorePointResult,
   DiagnosticReport,
+  DisableSessionResult,
   DnsOverrideInfo,
   ExportReportResult,
   RequestCodeResult,
@@ -37,6 +38,8 @@ const api = {
     scan: (): Promise<ScanReport> => ipcRenderer.invoke('tweaks:scan'),
     apply: (tweakIds: string[], options?: ApplyOptions): Promise<ApplySessionResult> =>
       ipcRenderer.invoke('tweaks:apply', tweakIds, options),
+    disable: (tweakIds: string[]): Promise<DisableSessionResult> =>
+      ipcRenderer.invoke('tweaks:disable', tweakIds),
     getDnsOverrideInfo: (tweakId: string): Promise<DnsOverrideInfo | null> =>
       ipcRenderer.invoke('tweaks:getDnsOverrideInfo', tweakId)
   },

@@ -18,6 +18,7 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
         type: 'service',
         serviceName: 'SysMain',
         desiredStartType: 'disabled',
+        disabledStartType: 'automatic',
         stopIfRunning: true
       }
     ],
@@ -26,6 +27,7 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
         type: 'service',
         serviceName: 'SysMain',
         desiredStartType: 'disabled',
+        disabledStartType: 'automatic',
         stopIfRunning: true
       }
     ]

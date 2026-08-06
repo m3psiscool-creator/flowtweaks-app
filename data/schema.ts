@@ -84,6 +84,16 @@ export interface CompatibilityRule {
  * fileCleanup and externalTool have no meaningful "previous value" to
  * snapshot — tweaks built from these must set reversible: false at the
  * TweakDefinition level and rely on the Windows restore point instead.
+ *
+ * registry and service also carry an explicit "off" value (disabledValue /
+ * disabledStartType), separate from the snapshot-based revert. Revert only
+ * works if Flow Tweaks itself made the change — a tweak that was already
+ * enabled on the customer's PC when Scan ran has no captured previous value
+ * to revert to at all. The explicit off-value is what lets "Already Enabled"
+ * tweaks be turned off directly, not just undone. It must be a real, defined
+ * value, never guessed from desiredValue — some tweaks invert a Windows
+ * default that's OFF, others invert one that's ON, so there's no safe generic
+ * rule ("flip the DWORD") that works for both directions.
  */
 export type Operation =
   | {
@@ -93,11 +103,13 @@ export type Operation =
       valueName: string
       valueType: 'REG_DWORD' | 'REG_SZ' | 'REG_BINARY'
       desiredValue: string | number
+      disabledValue: string | number
     }
   | {
       type: 'service'
       serviceName: string
       desiredStartType: 'disabled' | 'manual' | 'automatic'
+      disabledStartType: 'disabled' | 'manual' | 'automatic'
       stopIfRunning: boolean
     }
   | {

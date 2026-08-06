@@ -20,6 +20,15 @@ export const APPLY_ENABLED_TWEAK_IDS = new Set([
   'dns-cloudflare'
 ])
 
+// disableTweak.ts only implements the registry operation type (same scope as applyOperation.ts),
+// so dns-cloudflare — a networkDns tweak with its own dedicated apply/verify/auto-revert pipeline
+// — can be enabled but not yet turned off from a toggle. That's a real, known gap, not an oversight:
+// disabling a live DNS override safely needs the same adapter-topology handling applyDnsTweak.ts
+// already does for enabling it, which hasn't been built for the reverse direction yet.
+export const DISABLE_ENABLED_TWEAK_IDS = new Set(
+  [...APPLY_ENABLED_TWEAK_IDS].filter((id) => id !== 'dns-cloudflare')
+)
+
 // Backend licensing doesn't exist yet (see CLAUDE.md's later-phases list), so there's no real
 // in-app purchase/license check to run. The unlock CTA just opens the website's pricing section —
 // once a customer pays there today, licensing wiring is a separate, later phase.

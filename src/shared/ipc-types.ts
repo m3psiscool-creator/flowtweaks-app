@@ -172,6 +172,30 @@ export interface ApplyOptions {
   allowDnsOverride?: boolean
 }
 
+// --- Disabling tweaks (the reverse direction — see disabledValue/disabledStartType on Operation
+// in data/schema.ts for why this can't just be "revert", since a tweak Scan found already enabled
+// may never have been applied by Flow Tweaks and so has no change-log entry to revert from) ---
+
+export type TweakDisableOutcome =
+  | 'disabled'
+  | 'already-disabled'
+  | 'skipped-incompatible'
+  | 'failed'
+  | 'needs-manual-review'
+
+export interface TweakDisableResult {
+  tweakId: string
+  outcome: TweakDisableOutcome
+  detail?: string
+}
+
+export interface DisableSessionResult {
+  sessionId: string | null
+  restorePointCreated: boolean
+  restorePointError?: string
+  results: TweakDisableResult[]
+}
+
 // --- DNS-specific (network tweaks are handled separately from the generic
 // registry pipeline — see the plan discussion for why adapter topology and
 // connectivity verification don't fit the declarative-rule model) ---

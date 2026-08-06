@@ -20,7 +20,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\GameBar',
         valueName: 'AllowAutoGameMode',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       },
       {
         type: 'registry',
@@ -28,7 +29,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\GameBar',
         valueName: 'AutoGameModeEnabled',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       }
     ],
     apply: [
@@ -38,7 +40,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\GameBar',
         valueName: 'AllowAutoGameMode',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       },
       {
         type: 'registry',
@@ -46,7 +49,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'Software\\Microsoft\\GameBar',
         valueName: 'AutoGameModeEnabled',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       }
     ]
   },
@@ -71,7 +75,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
         valueName: 'Scheduling Category',
         valueType: 'REG_SZ',
-        desiredValue: 'High'
+        desiredValue: 'High',
+        disabledValue: 'Medium'
       },
       {
         type: 'registry',
@@ -79,7 +84,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\PriorityControl',
         valueName: 'Win32PrioritySeparation',
         valueType: 'REG_DWORD',
-        desiredValue: 0x26
+        desiredValue: 0x26,
+        disabledValue: 2
       },
       {
         type: 'registry',
@@ -87,7 +93,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile',
         valueName: 'NetworkThrottlingIndex',
         valueType: 'REG_DWORD',
-        desiredValue: 0xffffffff
+        desiredValue: 0xffffffff,
+        disabledValue: 10
       },
       {
         type: 'registry',
@@ -95,7 +102,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile',
         valueName: 'SystemResponsiveness',
         valueType: 'REG_DWORD',
-        desiredValue: 0x10
+        desiredValue: 0x10,
+        disabledValue: 20
       }
     ],
     apply: [
@@ -105,7 +113,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games',
         valueName: 'Scheduling Category',
         valueType: 'REG_SZ',
-        desiredValue: 'High'
+        desiredValue: 'High',
+        disabledValue: 'Medium'
       },
       {
         type: 'registry',
@@ -113,7 +122,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\PriorityControl',
         valueName: 'Win32PrioritySeparation',
         valueType: 'REG_DWORD',
-        desiredValue: 0x26
+        desiredValue: 0x26,
+        disabledValue: 2
       },
       {
         type: 'registry',
@@ -121,7 +131,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile',
         valueName: 'NetworkThrottlingIndex',
         valueType: 'REG_DWORD',
-        desiredValue: 0xffffffff
+        desiredValue: 0xffffffff,
+        disabledValue: 10
       },
       {
         type: 'registry',
@@ -129,7 +140,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile',
         valueName: 'SystemResponsiveness',
         valueType: 'REG_DWORD',
-        desiredValue: 0x10
+        desiredValue: 0x10,
+        disabledValue: 20
       }
     ]
   },
@@ -152,7 +164,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'System\\GameConfigStore',
         valueName: 'GameDVR_FSEBehaviorMode',
         valueType: 'REG_DWORD',
-        desiredValue: 2
+        desiredValue: 2,
+        disabledValue: 0
       },
       {
         type: 'registry',
@@ -160,7 +173,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'System\\GameConfigStore',
         valueName: 'GameDVR_HonorUserFSEBehaviorMode',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       }
     ],
     apply: [
@@ -170,7 +184,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'System\\GameConfigStore',
         valueName: 'GameDVR_FSEBehaviorMode',
         valueType: 'REG_DWORD',
-        desiredValue: 2
+        desiredValue: 2,
+        disabledValue: 0
       },
       {
         type: 'registry',
@@ -178,7 +193,8 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
         path: 'System\\GameConfigStore',
         valueName: 'GameDVR_HonorUserFSEBehaviorMode',
         valueType: 'REG_DWORD',
-        desiredValue: 1
+        desiredValue: 1,
+        disabledValue: 0
       }
     ]
   }

@@ -7,7 +7,8 @@ const visualEffectsRegistryOps = [
     path: 'Control Panel\\Desktop\\WindowMetrics',
     valueName: 'MinAnimate',
     valueType: 'REG_SZ' as const,
-    desiredValue: '0'
+    desiredValue: '0',
+    disabledValue: '1'
   },
   {
     type: 'registry' as const,
@@ -15,7 +16,8 @@ const visualEffectsRegistryOps = [
     path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced',
     valueName: 'TaskbarAnimations',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 0
+    desiredValue: 0,
+    disabledValue: 1
   },
   {
     type: 'registry' as const,
@@ -23,7 +25,8 @@ const visualEffectsRegistryOps = [
     path: 'Control Panel\\Desktop',
     valueName: 'UserPreferencesMask',
     valueType: 'REG_BINARY' as const,
-    desiredValue: '9012038010000000'
+    desiredValue: '9012038010000000',
+    disabledValue: '9E3E078012000000'
   },
   {
     type: 'registry' as const,
@@ -31,23 +34,28 @@ const visualEffectsRegistryOps = [
     path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects',
     valueName: 'VisualFXSetting',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 3
+    desiredValue: 3,
+    disabledValue: 0
   },
   {
     type: 'registry' as const,
     hive: 'HKCU' as const,
     path: 'Control Panel\\Desktop',
+    // Kept on in both states — this tweak's description promises window drag preview stays on.
     valueName: 'DragFullWindows',
     valueType: 'REG_SZ' as const,
-    desiredValue: '1'
+    desiredValue: '1',
+    disabledValue: '1'
   },
   {
     type: 'registry' as const,
     hive: 'HKCU' as const,
     path: 'Control Panel\\Desktop',
+    // Kept on in both states — this tweak's description promises font smoothing stays on.
     valueName: 'FontSmoothing',
     valueType: 'REG_SZ' as const,
-    desiredValue: '2'
+    desiredValue: '2',
+    disabledValue: '2'
   },
   {
     type: 'registry' as const,
@@ -55,15 +63,18 @@ const visualEffectsRegistryOps = [
     path: 'Control Panel\\Desktop',
     valueName: 'FontSmoothingType',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 2
+    desiredValue: 2,
+    disabledValue: 2
   },
   {
     type: 'registry' as const,
     hive: 'HKCU' as const,
     path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced',
+    // Kept on in both states — this tweak's description promises thumbnails stay on.
     valueName: 'IconsOnly',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 0
+    desiredValue: 0,
+    disabledValue: 0
   },
   {
     type: 'registry' as const,
@@ -71,7 +82,8 @@ const visualEffectsRegistryOps = [
     path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced',
     valueName: 'ListviewAlphaSelect',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 0
+    desiredValue: 0,
+    disabledValue: 1
   },
   {
     type: 'registry' as const,
@@ -79,7 +91,8 @@ const visualEffectsRegistryOps = [
     path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced',
     valueName: 'ListviewShadow',
     valueType: 'REG_DWORD' as const,
-    desiredValue: 0
+    desiredValue: 0,
+    disabledValue: 1
   }
 ]
 
@@ -103,7 +116,8 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity',
         valueName: 'Enabled',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ],
     apply: [
@@ -113,7 +127,8 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity',
         valueName: 'Enabled',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ]
   },
@@ -163,7 +178,8 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power',
         valueName: 'HiberbootEnabled',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ],
     apply: [
@@ -173,7 +189,8 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
         path: 'SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power',
         valueName: 'HiberbootEnabled',
         valueType: 'REG_DWORD',
-        desiredValue: 0
+        desiredValue: 0,
+        disabledValue: 1
       }
     ]
   },
