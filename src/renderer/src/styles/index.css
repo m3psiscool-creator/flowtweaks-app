@@ -23,3 +23,37 @@ h3,
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* Shared hover language for anything genuinely clickable — cards, nav items, profile tiles.
+   Only ever applied to elements that actually respond to a click; a hover cue on something
+   inert misleads the user about what's interactive. */
+.ft-hoverable {
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.ft-hoverable:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 85, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 24px -8px rgba(255, 85, 0, 0.55);
+}
+.ft-hoverable:active {
+  transform: translateY(0);
+}
+
+.ft-btn-glow {
+  transition:
+    opacity 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.ft-btn-glow:hover:not(:disabled) {
+  box-shadow: 0 0 18px -4px rgba(255, 85, 0, 0.7);
+  transform: translateY(-1px);
+}
+.ft-btn-glow:active:not(:disabled) {
+  transform: translateY(0);
+}

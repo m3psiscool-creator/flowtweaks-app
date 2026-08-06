@@ -97,7 +97,7 @@ export default function Diagnostics(): React.JSX.Element {
             type="button"
             onClick={exportReport}
             disabled={exporting}
-            className="ft-heading mt-3 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="ft-heading ft-btn-glow mt-3 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {exporting ? 'Exporting…' : 'Export Report'}
           </button>
@@ -119,7 +119,7 @@ export default function Diagnostics(): React.JSX.Element {
               type="button"
               onClick={generateSupportCode}
               disabled={generating}
-              className="ft-heading rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {generating ? 'Generating…' : 'Generate Support Code'}
             </button>

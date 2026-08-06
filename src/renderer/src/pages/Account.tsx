@@ -72,7 +72,7 @@ export default function Account(): React.JSX.Element {
                   if (await requestCode(email)) setCodeSent(true)
                 }}
                 disabled={busy || !email}
-                className="ft-heading rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {busy ? 'Sending…' : 'Send Code'}
               </button>
@@ -89,7 +89,7 @@ export default function Account(): React.JSX.Element {
                   type="button"
                   onClick={() => verifyCode(email, code)}
                   disabled={busy || !code}
-                  className="ft-heading rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {busy ? 'Verifying…' : 'Verify & Sign In'}
                 </button>
@@ -123,7 +123,7 @@ export default function Account(): React.JSX.Element {
               type="button"
               onClick={() => staffLogin(username, password)}
               disabled={busy || !username || !password}
-              className="ft-heading rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {busy ? 'Signing in…' : 'Staff Sign In'}
             </button>

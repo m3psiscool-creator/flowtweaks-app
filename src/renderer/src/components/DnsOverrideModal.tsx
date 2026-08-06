@@ -72,7 +72,7 @@ export default function DnsOverrideModal({ tweakId, onConfirm, onCancel }: DnsOv
             <button
               type="button"
               onClick={onConfirm}
-              className="ft-heading rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black hover:opacity-90"
+              className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black hover:opacity-90"
             >
               Override and Continue
             </button>

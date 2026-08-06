@@ -37,7 +37,7 @@ export default function Restore(): React.JSX.Element {
           type="button"
           onClick={createPoint}
           disabled={creating}
-          className="ft-heading rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="ft-heading ft-btn-glow rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {creating ? 'Creating…' : 'Create Restore Point'}
         </button>

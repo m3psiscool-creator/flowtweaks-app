@@ -112,7 +112,7 @@ export default function WheelSpinModal({ onClose, onWon, onSpin }: WheelSpinModa
               type="button"
               onClick={handleSpin}
               disabled={phase === 'spinning'}
-              className="ft-heading rounded bg-ft-orange px-6 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="ft-heading ft-btn-glow rounded bg-ft-orange px-6 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {phase === 'spinning' ? 'Spinning…' : 'Spin'}
             </button>

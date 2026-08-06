@@ -55,10 +55,10 @@ export default function TweakScanCard({
           selection!.onToggle()
         }
       }}
-      className={`rounded-lg border p-4 transition-colors ${
+      className={`rounded-lg border p-4 transition-all duration-150 ${
         selected
-          ? 'border-ft-orange bg-ft-orange/10'
-          : 'border-white/10 bg-white/5' + (canSelect ? ' hover:border-white/30' : '')
+          ? 'border-ft-orange bg-ft-orange/10 shadow-[0_0_20px_-6px_rgba(255,85,0,0.45)]'
+          : `border-white/10 bg-white/5 ${canSelect ? 'ft-hoverable' : ''}`
       } ${compatible ? '' : 'opacity-50'} ${canSelect ? 'cursor-pointer' : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -144,7 +144,7 @@ export default function TweakScanCard({
             e.stopPropagation()
             locked.onUnlockClick()
           }}
-          className="ft-heading mt-2 rounded bg-ft-orange px-3 py-1.5 text-xs tracking-wide text-ft-black transition-opacity hover:opacity-90"
+          className="ft-heading ft-btn-glow mt-2 rounded bg-ft-orange px-3 py-1.5 text-xs tracking-wide text-ft-black transition-opacity hover:opacity-90"
         >
           Unlock Full Package — $11.99
         </button>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ALL_TWEAKS, getTweakById } from '@data/tweaks'
+import { APPLY_ENABLED_TWEAK_IDS, CHECKOUT_URL } from '@data/applyEnabled'
 import { CATEGORY_LABELS, type Category } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
@@ -9,29 +10,6 @@ import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
 import WheelSpinModal from '@renderer/components/WheelSpinModal'
-
-// Backend licensing doesn't exist yet (see CLAUDE.md's later-phases list), so there's no real
-// in-app purchase/license check to run. The unlock CTA just opens the website's pricing section —
-// once a customer pays there today, licensing wiring is a separate, later phase.
-const CHECKOUT_URL = 'https://flowtweaks.com/#pricing'
-
-// All remaining registry-only tweaks are enabled here — applyOperation.ts already supports
-// 'registry' fully (DWORD/SZ/BINARY), and applyTweak.ts gates admin-required tweaks behind a real
-// elevation check (needs-manual-review, not a crash) per CLAUDE.md's hard rule on graceful
-// elevation handling. disable-memory-integrity is deliberately excluded — it's a security feature
-// (Core Isolation) and high risk, pending a dedicated extra-confirmation UX before it's enabled.
-// dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline; sfc-scan is an
-// externalTool, not registry, and isn't supported by applyOperation.ts yet.
-const APPLY_ENABLED_TWEAK_IDS = new Set([
-  'dark-mode',
-  'game-mode',
-  'fullscreen-optimizations',
-  'scheduling-registry-tweaks',
-  'hags',
-  'disable-fast-startup',
-  'visual-effects',
-  'dns-cloudflare'
-])
 
 export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
@@ -154,7 +132,7 @@ export default function Optimizations(): React.JSX.Element {
               type="button"
               onClick={handleRunAll}
               disabled={applying || selectableTweakIds.size === 0}
-              className="ft-heading rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="ft-heading ft-btn-glow rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {applying ? 'Applying…' : `Run All (${selectableTweakIds.size})`}
             </button>
@@ -172,7 +150,7 @@ export default function Optimizations(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setWheelModalOpen(true)}
-            className="ft-heading rounded bg-ft-orange px-4 py-1.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
+            className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-1.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
           >
             Spin Now
           </button>
@@ -216,7 +194,7 @@ export default function Optimizations(): React.JSX.Element {
           <button
             type="button"
             onClick={runScan}
-            className="ft-heading rounded bg-ft-orange px-8 py-3 text-xl tracking-wide text-ft-black transition-opacity hover:opacity-90"
+            className="ft-heading ft-btn-glow rounded bg-ft-orange px-8 py-3 text-xl tracking-wide text-ft-black transition-opacity hover:opacity-90"
           >
             Scan To See Optimizations
           </button>

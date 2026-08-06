@@ -32,10 +32,10 @@ export default function Sidebar({ active, onSelect }: SidebarProps): React.JSX.E
             <button
               type="button"
               onClick={() => onSelect(item.key)}
-              className={`ft-heading w-full rounded px-3 py-2 text-left text-lg tracking-wide transition-colors ${
+              className={`ft-heading w-full rounded border-l-2 px-3 py-2 text-left text-lg tracking-wide transition-all duration-150 ${
                 active === item.key
-                  ? 'bg-ft-orange text-ft-black'
-                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  ? 'border-ft-orange bg-ft-orange text-ft-black shadow-[0_0_16px_-4px_rgba(255,85,0,0.8)]'
+                  : 'border-transparent text-white/70 hover:translate-x-0.5 hover:border-ft-orange/50 hover:bg-white/5 hover:text-white'
               }`}
             >
               {item.label}
