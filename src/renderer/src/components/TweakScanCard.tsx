@@ -58,7 +58,7 @@ export default function TweakScanCard({
       className={`rounded-lg border p-4 transition-all duration-150 ${
         selected
           ? 'border-ft-orange bg-ft-orange/10 shadow-[0_0_20px_-6px_rgba(255,85,0,0.45)]'
-          : `border-white/10 bg-white/5 ${canSelect ? 'ft-hoverable' : ''}`
+          : `border-white/10 bg-white/5 ${canSelect ? 'ft-hoverable' : 'ft-hoverable-subtle'}`
       } ${compatible ? '' : 'opacity-50'} ${canSelect ? 'cursor-pointer' : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">

@@ -44,6 +44,20 @@ h3,
   transform: translateY(0);
 }
 
+/* Every tweak card gets this, even ones that can't currently be selected (already enabled, needs
+   admin) — a card that never responds to the mouse reads as broken, not as "correctly disabled."
+   Deliberately weaker than .ft-hoverable (no lift, no pointer cursor, no click affordance) so it
+   still doesn't claim to be clickable when it isn't. */
+.ft-hoverable-subtle {
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.ft-hoverable-subtle:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 .ft-btn-glow {
   transition:
     opacity 150ms ease,
