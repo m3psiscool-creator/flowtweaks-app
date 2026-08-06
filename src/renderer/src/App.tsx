@@ -4,6 +4,7 @@ import Home from '@renderer/pages/Home'
 import Optimizations from '@renderer/pages/Optimizations'
 import FpsEstimator from '@renderer/pages/FpsEstimator'
 import GameProfiles from '@renderer/pages/GameProfiles'
+import StartupPrograms from '@renderer/pages/StartupPrograms'
 import Restore from '@renderer/pages/Restore'
 import Diagnostics from '@renderer/pages/Diagnostics'
 import Account from '@renderer/pages/Account'
@@ -16,6 +17,7 @@ const PAGES: Record<string, () => React.JSX.Element> = {
   optimizations: Optimizations,
   'fps-estimator': FpsEstimator,
   'game-profiles': GameProfiles,
+  'startup-programs': StartupPrograms,
   restore: Restore,
   diagnostics: Diagnostics,
   account: Account,

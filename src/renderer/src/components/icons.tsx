@@ -161,6 +161,16 @@ export function IconUser({ className }: IconProps): React.JSX.Element {
   )
 }
 
+export function IconRocket({ className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 2c3 2 4.5 6 4.5 10 0 2-.5 4-1.5 5.5l-3-2-3 2C7.5 16 7 14 7 12c0-4 1.5-8 5-10z" />
+      <circle cx="12" cy="10" r="1.4" />
+      <path d="M9 15.5l-2.5 1.3.3 2.7M15 15.5l2.5 1.3-.3 2.7" />
+    </svg>
+  )
+}
+
 export function IconInfo({ className }: IconProps): React.JSX.Element {
   return (
     <svg {...base} className={className}>

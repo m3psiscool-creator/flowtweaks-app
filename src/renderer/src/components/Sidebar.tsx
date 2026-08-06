@@ -6,7 +6,8 @@ import {
   IconClock,
   IconShield,
   IconUser,
-  IconInfo
+  IconInfo,
+  IconRocket
 } from '@renderer/components/icons'
 
 export interface NavItem {
@@ -25,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'optimizations', label: 'Optimizations', icon: IconBolt },
   { key: 'fps-estimator', label: 'FPS Estimator', icon: IconCpu },
   { key: 'game-profiles', label: 'Game Profiles', icon: IconGamepad },
+  { key: 'startup-programs', label: 'Startup Programs', icon: IconRocket },
   { key: 'restore', label: 'Restore', icon: IconClock },
   { key: 'diagnostics', label: 'Diagnostics', icon: IconShield },
   { key: 'account', label: 'Account', icon: IconUser },

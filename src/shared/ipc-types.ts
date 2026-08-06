@@ -265,6 +265,40 @@ export interface BoostStatus {
   lastError: string | null
 }
 
+// --- Startup Programs (dynamic, per-machine — not part of the static tweak catalog) ---
+
+export type StartupSource = 'registry' | 'startupFolder'
+export type StartupScope = 'user' | 'allUsers'
+
+export interface StartupItem {
+  /** Stable within one PC: `${scope}:${source}:${name}` — name is the Run value name or shortcut filename. */
+  id: string
+  name: string
+  /** The command/target path this item launches — shown so a customer can recognize what it is. */
+  command: string
+  source: StartupSource
+  scope: StartupScope
+  /**
+   * Read from the same StartupApproved registry flag Task Manager's own Startup tab uses — no
+   * StartupApproved entry at all means Windows' default (enabled), not disabled.
+   */
+  enabled: boolean
+  /** True when this item's scope is allUsers (HKLM) and the app isn't currently elevated. */
+  needsElevation: boolean
+}
+
+export interface StartupReport {
+  isElevated: boolean
+  items: StartupItem[]
+}
+
+export interface StartupToggleResult {
+  success: boolean
+  error?: string
+  restorePointCreated: boolean
+  restorePointError?: string
+}
+
 // --- Account (authenticates against the existing Render backend — no second backend) ---
 
 export interface AccountUser {

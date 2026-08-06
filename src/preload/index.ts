@@ -17,6 +17,9 @@ import type {
   RestoreSession,
   RevertResult,
   ScanReport,
+  StartupItem,
+  StartupReport,
+  StartupToggleResult,
   SupportCodeResult,
   SystemSpecs,
   SystemUsage,
@@ -77,6 +80,13 @@ const api = {
       ipcRenderer.on('boost:status', listener)
       return () => ipcRenderer.removeListener('boost:status', listener)
     }
+  },
+  startup: {
+    getReport: (): Promise<StartupReport> => ipcRenderer.invoke('startup:getReport'),
+    setEnabled: (
+      item: Pick<StartupItem, 'id' | 'name' | 'scope' | 'source'>,
+      enabled: boolean
+    ): Promise<StartupToggleResult> => ipcRenderer.invoke('startup:setEnabled', item, enabled)
   },
   account: {
     getSession: (): Promise<AccountSession | null> => ipcRenderer.invoke('account:getSession'),

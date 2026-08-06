@@ -9,6 +9,7 @@ import { registerDiagnosticsIpcHandlers } from './ipc/diagnostics'
 import { registerBoostIpcHandlers, attachBoostStatusPush } from './ipc/boost'
 import { stopBoost, getBoostStatus } from './boost/boostService'
 import { registerAccountIpcHandlers } from './ipc/account'
+import { registerStartupIpcHandlers } from './ipc/startup'
 import { relaunchElevatedIfNeeded } from './system/selfElevate'
 import { reconcilePendingEntries } from './restore/reconcile'
 
@@ -79,6 +80,7 @@ app.whenReady().then(async () => {
   registerDiagnosticsIpcHandlers()
   registerBoostIpcHandlers()
   registerAccountIpcHandlers()
+  registerStartupIpcHandlers()
 
   // Resolve any change log entries left 'pending' by a crash before the UI can touch them.
   await reconcilePendingEntries()
