@@ -5,11 +5,14 @@ import type {
   AccountTicket,
   ApplyOptions,
   ApplySessionResult,
+  AppPurchasablePlan,
+  CheckoutResult,
   CreateRestorePointResult,
   DiagnosticReport,
   DisableSessionResult,
   DnsOverrideInfo,
   ExportReportResult,
+  RedeemCodeResult,
   RequestCodeResult,
   RestorePointInfo,
   RestoreSession,
@@ -85,7 +88,9 @@ const api = {
       ipcRenderer.invoke('account:staffLogin', username, password),
     logout: (): Promise<void> => ipcRenderer.invoke('account:logout'),
     getMyTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getMyTickets'),
-    getStaffTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getStaffTickets')
+    getStaffTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getStaffTickets'),
+    buyPlan: (plan: AppPurchasablePlan): Promise<CheckoutResult> => ipcRenderer.invoke('account:buyPlan', plan),
+    redeemCode: (code: string): Promise<RedeemCodeResult> => ipcRenderer.invoke('account:redeemCode', code)
   }
 }
 

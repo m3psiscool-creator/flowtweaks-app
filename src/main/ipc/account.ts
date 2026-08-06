@@ -1,8 +1,16 @@
-import { ipcMain } from 'electron'
+import { ipcMain, shell } from 'electron'
 import * as backend from '../account/backendClient'
 import type { RawTicket, RawUser } from '../account/backendClient'
 import { loadSession, saveSession } from '../account/sessionStore'
-import type { AccountSession, AccountTicket, AccountUser, TicketPlan } from '../../shared/ipc-types'
+import type {
+  AccountSession,
+  AccountTicket,
+  AccountUser,
+  AppPurchasablePlan,
+  CheckoutResult,
+  RedeemCodeResult,
+  TicketPlan
+} from '../../shared/ipc-types'
 
 function mapUser(raw: RawUser): AccountUser {
   return { id: raw.id, email: raw.email, name: raw.name ?? null, username: raw.username, role: raw.role }
@@ -54,5 +62,39 @@ export function registerAccountIpcHandlers(): void {
     if (!session || session.user.role !== 'staff') return []
     const raw = await backend.getStaffTickets(session.token)
     return raw.map(mapTicket)
+  })
+
+  // Opens the Stripe checkout in the system browser rather than returning the URL to the
+  // renderer — Electron renderers can't (and shouldn't) navigate to arbitrary external payment
+  // pages themselves. The customer completes payment there; the webhook creates their ticket
+  // server-side, and they come back to the app and hit Refresh (or just reopen Account).
+  ipcMain.handle(
+    'account:buyPlan',
+    async (_event, plan: AppPurchasablePlan): Promise<CheckoutResult> => {
+      const session = await loadSession()
+      if (!session || session.user.role !== 'customer' || !session.user.email) {
+        return { ok: false, error: 'Sign in first.' }
+      }
+      try {
+        const url = await backend.createCheckoutSession(session.user.email, plan)
+        await shell.openExternal(url)
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle('account:redeemCode', async (_event, code: string): Promise<RedeemCodeResult> => {
+    const session = await loadSession()
+    if (!session || session.user.role !== 'customer') {
+      return { ok: false, error: 'Sign in first.' }
+    }
+    try {
+      const raw = await backend.redeemAccessCode(session.token, code)
+      return { ok: true, ticket: mapTicket(raw) }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
   })
 }

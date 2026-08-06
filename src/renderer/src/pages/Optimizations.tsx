@@ -6,6 +6,7 @@ import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
 import { useDisable } from '@renderer/hooks/useDisable'
+import { useAccount } from '@renderer/hooks/useAccount'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
@@ -14,11 +15,15 @@ export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
   const { applying, result: applyResult, apply, reset: resetApply } = useApply()
   const { disabling, result: disableResult, disable, reset: resetDisable } = useDisable()
+  const { session, hasLicense, loading: accountLoading } = useAccount()
   const [activeTweakId, setActiveTweakId] = useState<string | null>(null)
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
   const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
 
   const anyBusy = applying || disabling
+  // Staff can freely test tweaks for support purposes; customers need a pc/both ticket. Scanning
+  // stays open to everyone — seeing what you'd get is fine, changing the PC is the gated part.
+  const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
 
   const resultByTweakId = useMemo(() => {
     const map = new Map<string, TweakScanResult>()
@@ -60,6 +65,7 @@ export default function Optimizations(): React.JSX.Element {
   }, [report, resultByTweakId])
 
   async function runToggleAction(tweakId: string, action: 'enable' | 'disable'): Promise<void> {
+    if (!canApply) return
     setActiveTweakId(tweakId)
     resetApply()
     resetDisable()
@@ -79,6 +85,7 @@ export default function Optimizations(): React.JSX.Element {
   }
 
   async function confirmDnsOverride(): Promise<void> {
+    if (!canApply) return
     setDnsOverrideConfirmed(true)
     setDnsOverrideModalOpen(false)
     setActiveTweakId('dns-cloudflare')
@@ -91,6 +98,7 @@ export default function Optimizations(): React.JSX.Element {
   }
 
   async function handleRunAll(): Promise<void> {
+    if (!canApply) return
     setActiveTweakId(null)
     resetApply()
     resetDisable()
@@ -117,7 +125,7 @@ export default function Optimizations(): React.JSX.Element {
             <button
               type="button"
               onClick={handleRunAll}
-              disabled={anyBusy || selectableTweakIds.size === 0}
+              disabled={!canApply || anyBusy || selectableTweakIds.size === 0}
               className="ft-heading ft-btn-glow rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {applying && !activeTweakId ? 'Applying…' : `Run All (${selectableTweakIds.size})`}
@@ -136,6 +144,15 @@ export default function Optimizations(): React.JSX.Element {
         <p className="ft-glass mt-4 border-status-warning/30 p-3 text-sm text-status-warning">
           Not running as administrator — tweaks marked &quot;Needs Admin&quot; can be scanned but
           won&apos;t be applicable until Flow Tweaks is relaunched elevated.
+        </p>
+      )}
+
+      {report && !accountLoading && !canApply && (
+        <p className="ft-glass mt-4 border-ft-orange/30 p-3 text-sm text-white/70">
+          <span className="text-ft-orange font-semibold">Locked.</span>{' '}
+          {session
+            ? "This account doesn't have an unlock yet — buy a plan or redeem an access code from the Account tab to start applying tweaks."
+            : 'Sign in and unlock a plan from the Account tab to start applying tweaks.'}
         </p>
       )}
 
@@ -210,7 +227,7 @@ export default function Optimizations(): React.JSX.Element {
                               onEnable: () => runToggleAction(tweak.id, 'enable'),
                               onDisable: () => runToggleAction(tweak.id, 'disable'),
                               busy: activeTweakId === tweak.id,
-                              disabled: anyBusy && activeTweakId !== tweak.id,
+                              disabled: !canApply || (anyBusy && activeTweakId !== tweak.id),
                               canDisable: DISABLE_ENABLED_TWEAK_IDS.has(tweak.id)
                             }
                           : undefined

@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { AccountSession, AccountTicket } from '@shared/ipc-types'
+import type { AccountSession, AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
+
+// A ticket for pc or both means the desktop app itself is unlocked — console-only tickets are
+// real purchases, just not ones this Windows app can do anything with (see AppPurchasablePlan).
+function hasAppLicense(tickets: AccountTicket[]): boolean {
+  return tickets.some((t) => t.plan === 'pc' || t.plan === 'both')
+}
 
 interface UseAccountResult {
   session: AccountSession | null
   loading: boolean
   tickets: AccountTicket[]
   loadingTickets: boolean
+  hasLicense: boolean
   error: string | null
   busy: boolean
   requestCode: (email: string) => Promise<boolean>
   verifyCode: (email: string, code: string) => Promise<boolean>
   staffLogin: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
+  refreshTickets: () => void
+  buyPlan: (plan: AppPurchasablePlan) => Promise<boolean>
+  redeemCode: (code: string) => Promise<boolean>
 }
 
 export function useAccount(): UseAccountResult {
@@ -99,5 +109,61 @@ export function useAccount(): UseAccountResult {
     setTickets([])
   }, [])
 
-  return { session, loading, tickets, loadingTickets, error, busy, requestCode, verifyCode, staffLogin, logout }
+  const refreshTickets = useCallback(() => {
+    if (session) loadTickets(session.user.role)
+  }, [session, loadTickets])
+
+  const buyPlan = useCallback(
+    async (plan: AppPurchasablePlan) => {
+      setError(null)
+      setBusy(true)
+      try {
+        const result = await window.api.account.buyPlan(plan)
+        if (!result.ok) {
+          setError(result.error ?? 'Could not start checkout.')
+          return false
+        }
+        return true
+      } finally {
+        setBusy(false)
+      }
+    },
+    []
+  )
+
+  const redeemCode = useCallback(
+    async (code: string) => {
+      setError(null)
+      setBusy(true)
+      try {
+        const result = await window.api.account.redeemCode(code)
+        if (!result.ok) {
+          setError(result.error ?? 'Invalid or already-used code.')
+          return false
+        }
+        refreshTickets()
+        return true
+      } finally {
+        setBusy(false)
+      }
+    },
+    [refreshTickets]
+  )
+
+  return {
+    session,
+    loading,
+    tickets,
+    loadingTickets,
+    hasLicense: hasAppLicense(tickets),
+    error,
+    busy,
+    requestCode,
+    verifyCode,
+    staffLogin,
+    logout,
+    refreshTickets,
+    buyPlan,
+    redeemCode
+  }
 }

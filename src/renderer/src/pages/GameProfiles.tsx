@@ -6,6 +6,7 @@ import { getTweakById } from '@data/tweaks'
 import { APPLY_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
+import { useAccount } from '@renderer/hooks/useAccount'
 import ResultsReport from '@renderer/components/ResultsReport'
 import { IconGamepad, IconInfo } from '@renderer/components/icons'
 
@@ -14,13 +15,15 @@ function ProfileCard({
   expanded,
   onToggleExpand,
   onApply,
-  applying
+  applying,
+  canApply
 }: {
   profile: GameProfile
   expanded: boolean
   onToggleExpand: () => void
   onApply: (tweakIds: string[]) => void
   applying: boolean
+  canApply: boolean
 }): React.JSX.Element {
   const bundleTweaks = profile.tweakIds
     .map((id) => getTweakById(id))
@@ -91,12 +94,12 @@ function ProfileCard({
         type="button"
         onClick={(e) => {
           e.stopPropagation()
-          onApply(applyableIds)
+          if (canApply) onApply(applyableIds)
         }}
-        disabled={applying || applyableIds.length === 0}
+        disabled={!canApply || applying || applyableIds.length === 0}
         className="ft-heading ft-btn-glow mt-4 w-full rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
       >
-        {applying ? 'Applying…' : `Apply Profile (${applyableIds.length})`}
+        {!canApply ? 'Locked — unlock in Account' : applying ? 'Applying…' : `Apply Profile (${applyableIds.length})`}
       </button>
     </div>
   )
@@ -105,7 +108,10 @@ function ProfileCard({
 export default function GameProfiles(): React.JSX.Element {
   const { runScan } = useScan()
   const { applying, result, apply, reset } = useApply()
+  const { session, hasLicense, loading: accountLoading } = useAccount()
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
 
   useEffect(() => {
     runScan()
@@ -113,6 +119,7 @@ export default function GameProfiles(): React.JSX.Element {
   }, [])
 
   async function handleApply(tweakIds: string[]): Promise<void> {
+    if (!canApply) return
     await apply(tweakIds)
     runScan()
   }
@@ -124,6 +131,15 @@ export default function GameProfiles(): React.JSX.Element {
         Apply a bundle of compatible tweaks tuned for what you&apos;re playing, in one click.
         Click a card for its game-specific breakdown.
       </p>
+
+      {!accountLoading && !canApply && (
+        <p className="ft-glass mt-4 border-ft-orange/30 p-3 text-sm text-white/70">
+          <span className="text-ft-orange font-semibold">Locked.</span>{' '}
+          {session
+            ? "This account doesn't have an unlock yet — buy a plan or redeem an access code from the Account tab."
+            : 'Sign in and unlock a plan from the Account tab to apply a profile.'}
+        </p>
+      )}
 
       {result && (
         <div className="mt-4">
@@ -149,6 +165,7 @@ export default function GameProfiles(): React.JSX.Element {
             onToggleExpand={() => setExpandedId((prev) => (prev === profile.id ? null : profile.id))}
             onApply={handleApply}
             applying={applying}
+            canApply={canApply}
           />
         ))}
       </div>

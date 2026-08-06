@@ -310,3 +310,17 @@ export interface RequestCodeResult {
   ok: boolean
   message: string
 }
+
+/** Only 'pc' and 'both' can be bought in-app — console has no Windows app to unlock, stays a website+Discord purchase. */
+export type AppPurchasablePlan = 'pc' | 'both'
+
+export interface CheckoutResult {
+  ok: boolean
+  error?: string
+}
+
+export interface RedeemCodeResult {
+  ok: boolean
+  ticket?: AccountTicket
+  error?: string
+}
