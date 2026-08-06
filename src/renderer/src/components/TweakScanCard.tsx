@@ -12,8 +12,6 @@ interface TweakScanCardProps {
     onToggle: () => void
     disabledReason?: string
   }
-  /** True when this specific tweak hasn't had its apply logic enabled yet. */
-  applyUnavailable?: boolean
   /** Set when this tweak is part of the paid package and hasn't been unlocked (paid or won) yet. */
   locked?: {
     onUnlockClick: () => void
@@ -32,7 +30,6 @@ export default function TweakScanCard({
   tweak,
   result,
   selection,
-  applyUnavailable,
   locked,
   freeUnlock,
   override
@@ -139,7 +136,6 @@ export default function TweakScanCard({
       <div className="mt-3 flex gap-4 text-xs text-white/30">
         {tweak.requiresRestart && <span>Requires restart</span>}
         {!tweak.reversible && <span>Not individually reversible</span>}
-        {applyUnavailable && <span>Applying not available yet</span>}
       </div>
     </div>
   )

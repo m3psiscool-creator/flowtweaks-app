@@ -6,6 +6,7 @@
 
 export type Category =
   | 'fps-latency'
+  | 'input'
   | 'windows-performance'
   | 'network'
   | 'gpu'
@@ -14,9 +15,11 @@ export type Category =
   | 'storage-cleanup'
   | 'game-specific'
   | 'personalization'
+  | 'privacy-noise'
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   'fps-latency': 'FPS & Latency',
+  input: 'Input',
   'windows-performance': 'Windows Performance',
   network: 'Network',
   gpu: 'GPU',
@@ -24,7 +27,30 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   'startup-programs': 'Startup Programs',
   'storage-cleanup': 'Storage Cleanup',
   'game-specific': 'Game-Specific',
-  personalization: 'Personalization'
+  personalization: 'Personalization',
+  'privacy-noise': 'Privacy & Noise'
+}
+
+/**
+ * Fixed hue per category, drawn from a CVD-validated 8-hue categorical set (validated against
+ * this app's actual #0d0d0d surface — see the dataviz skill's color-formula/palette references).
+ * Brand orange (#FF5500) is deliberately NOT reused here — it's reserved for selection/CTA/brand
+ * so a category tag never gets mistaken for "this card is selected." Categories always render
+ * with a text label alongside the color, so a little reuse among the lower-traffic categories
+ * (storage-cleanup/game-specific/personalization) is fine — color is never the only signal.
+ */
+export const CATEGORY_COLORS: Record<Category, string> = {
+  'fps-latency': '#e66767', // red
+  gpu: '#9085e9', // violet
+  'windows-performance': '#3987e5', // blue
+  network: '#199e70', // aqua
+  input: '#d55181', // magenta
+  'privacy-noise': '#c98500', // yellow/gold
+  'background-processes': '#008300', // green
+  'startup-programs': '#d95926', // categorical orange (distinct step from brand #FF5500)
+  'storage-cleanup': '#3987e5', // blue (reuse — low-traffic category)
+  'game-specific': '#9085e9', // violet (reuse)
+  personalization: '#199e70' // aqua (reuse)
 }
 
 export type RiskLevel = 'low' | 'medium' | 'high'

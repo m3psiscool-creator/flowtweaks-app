@@ -1,6 +1,7 @@
 import { getTweakById } from '@data/tweaks'
 import type { ChangeLogEntry, RestoreSession } from '@shared/ipc-types'
 import { useRestore } from '@renderer/hooks/useRestore'
+import { IconClock, IconCheckCircle, IconXCircle } from '@renderer/components/icons'
 
 function groupByTweak(entries: ChangeLogEntry[]): Array<{ tweakId: string; entries: ChangeLogEntry[] }> {
   const order: string[] = []
@@ -44,15 +45,18 @@ export default function Restore(): React.JSX.Element {
       </div>
 
       {createResult && (
-        <p className={`mt-4 text-sm ${createResult.success ? 'text-green-400' : 'text-red-400'}`}>
+        <p className={`mt-4 flex items-center gap-2 text-sm ${createResult.success ? 'text-status-good' : 'text-status-critical'}`}>
+          {createResult.success ? <IconCheckCircle className="h-4 w-4" /> : <IconXCircle className="h-4 w-4" />}
           {createResult.success
             ? 'Restore point created (or Windows reused a recent one — that\'s normal).'
             : createResult.error}
         </p>
       )}
 
-      <section className="mt-6 rounded-lg border border-white/10 bg-white/5 p-5">
-        <h2 className="ft-heading text-xl text-white/80">Windows Restore Points</h2>
+      <section className="ft-glass mt-6 p-5">
+        <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+          <IconClock className="h-5 w-5" /> Windows Restore Points
+        </h2>
         <p className="mt-1 text-sm text-white/40">
           The system-level safety net. Flow Tweaks creates one of these before every optimization
           run, in addition to its own change log below.
@@ -78,7 +82,7 @@ export default function Restore(): React.JSX.Element {
         )}
       </section>
 
-      <section className="mt-6 rounded-lg border border-white/10 bg-white/5 p-5">
+      <section className="ft-glass mt-6 p-5">
         <h2 className="ft-heading text-xl text-white/80">Change Log</h2>
         <p className="mt-1 text-sm text-white/40">
           Every tweak Flow Tweaks applies is recorded here with its previous value, so it can be
@@ -123,7 +127,7 @@ function SessionCard({
   const sessionReverting = revertingIds.has(session.id)
 
   return (
-    <div className="rounded border border-white/10 p-3 text-sm">
+    <div className="ft-glass-solid p-3 text-sm">
       <div className="flex items-center justify-between text-white/70">
         <span>{session.description}</span>
         <div className="flex items-center gap-3">
@@ -140,7 +144,7 @@ function SessionCard({
           )}
         </div>
       </div>
-      {revertErrors[session.id] && <p className="mt-1 text-xs text-red-400">{revertErrors[session.id]}</p>}
+      {revertErrors[session.id] && <p className="mt-1 text-xs text-status-critical">{revertErrors[session.id]}</p>}
 
       {groups.length === 0 ? (
         <p className="mt-1 text-white/40">No changes in this session.</p>
@@ -165,9 +169,9 @@ function SessionCard({
                   <span
                     className={
                       outcome === 'reverted'
-                        ? 'text-green-400'
+                        ? 'text-status-good'
                         : outcome === 'revert-failed'
-                          ? 'text-red-400'
+                          ? 'text-status-critical'
                           : 'text-white/40'
                     }
                   >
@@ -184,7 +188,7 @@ function SessionCard({
                     {reverting ? 'Reverting…' : 'Revert'}
                   </button>
                 )}
-                {revertErrors[key] && <span className="text-red-400">{revertErrors[key]}</span>}
+                {revertErrors[key] && <span className="text-status-critical">{revertErrors[key]}</span>}
               </div>
             )
           })}

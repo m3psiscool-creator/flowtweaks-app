@@ -5,6 +5,26 @@
   --color-ft-orange: #ff5500;
   --color-ft-white: #ffffff;
 
+  /* Status palette — validated (dataviz skill, CVD + contrast) against this app's real #0d0d0d
+     surface. Carries meaning (risk level, applied/failed/etc.) everywhere in the app instead of
+     everything defaulting to orange or white. Always paired with a text label, never color alone. */
+  --color-status-good: #0ca30c;
+  --color-status-warning: #fab219;
+  --color-status-serious: #ec835a;
+  --color-status-critical: #d03b3b;
+
+  /* Categorical palette — validated 8-hue set, fixed order, used for per-category identity
+     (section headers, category tags). Brand orange is deliberately excluded from this set — see
+     CATEGORY_COLORS in data/schema.ts for the category → hue mapping and why. */
+  --color-cat-blue: #3987e5;
+  --color-cat-orange: #d95926;
+  --color-cat-aqua: #199e70;
+  --color-cat-yellow: #c98500;
+  --color-cat-magenta: #d55181;
+  --color-cat-green: #008300;
+  --color-cat-violet: #9085e9;
+  --color-cat-red: #e66767;
+
   --font-display: 'Orbitron', sans-serif;
   --font-heading: 'Bebas Neue', sans-serif;
 }
@@ -13,6 +33,14 @@ body {
   background-color: var(--color-ft-black);
   color: var(--color-ft-white);
   font-family: 'Orbitron', sans-serif;
+  /* Soft, fixed ambient color blobs — without something behind them, the glass panels'
+     backdrop-blur would have nothing to blur and the "liquid glass" effect would be invisible
+     on a flat black page. */
+  background-image:
+    radial-gradient(ellipse 900px 650px at 10% -15%, rgba(255, 85, 0, 0.13), transparent 60%),
+    radial-gradient(ellipse 750px 550px at 105% 15%, rgba(57, 135, 229, 0.09), transparent 60%),
+    radial-gradient(ellipse 650px 650px at 40% 110%, rgba(144, 133, 233, 0.07), transparent 60%);
+  background-attachment: fixed;
 }
 
 /* Electron renders Chromium's default scrollbar (light gray, OS-styled) — visibly clashes with
@@ -77,4 +105,51 @@ h3,
 }
 .ft-btn-glow:active:not(:disabled) {
   transform: translateY(0);
+}
+
+/* --- Liquid glass panel system — everywhere except the Optimizations tab, which keeps its
+   existing flat-card structure by design. Frosted translucency + rounded edges + layered
+   shadow + a light rim on the top edge, matching Apple's Liquid Glass material language
+   (translucency, refraction/depth, content stays on a readable layer — text never sits
+   directly on raw glass with no backing). */
+.ft-glass {
+  position: relative;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 65%);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow:
+    0 20px 50px -24px rgba(0, 0, 0, 0.65),
+    0 2px 10px -4px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* A stronger backing for panels with dense body text — same material, less see-through, so
+   small text stays comfortably readable over the ambient background blobs. */
+.ft-glass-solid {
+  position: relative;
+  background: linear-gradient(155deg, rgba(20, 20, 20, 0.92), rgba(13, 13, 13, 0.88) 65%);
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow:
+    0 20px 50px -24px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.ft-glass-hover {
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.ft-glass-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 85, 0, 0.45);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.7),
+    0 0 32px -10px rgba(255, 85, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }

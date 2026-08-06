@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ALL_TWEAKS } from '@data/tweaks'
 import { GAME_PROFILES } from '@data/gameProfiles'
-import type { FpsImpact } from '@data/schema'
+import { CATEGORY_COLORS, type FpsImpact } from '@data/schema'
 import { useScan } from '@renderer/hooks/useScan'
+import Gauge from '@renderer/components/Gauge'
+import { IconGamepad, IconBolt } from '@renderer/components/icons'
 
 const IMPACT_SCORE: Record<FpsImpact, number> = { none: 0, low: 1, medium: 2, high: 3 }
 const EMPHASIZE_MULTIPLIER = 1.5
+// Scores above this are treated as "maxed out" for the gauge — the number itself is unbounded
+// (more relevant tweaks = higher score), but the dial only needs to communicate "how full."
+const GAUGE_MAX_SCORE = 14
 
 interface Tier {
   label: string
   range: string
-  className: string
+  colorVar: string
 }
 
 /**
@@ -19,11 +24,11 @@ interface Tier {
  * app, since this whole page's job is estimating a gain that hasn't happened yet.
  */
 function tierFor(score: number): Tier {
-  if (score <= 0) return { label: 'Already optimized', range: 'No further predicted gain from these tweaks', className: 'text-white/50' }
-  if (score <= 2) return { label: 'Low potential improvement', range: 'roughly 0–5%', className: 'text-white/70' }
-  if (score <= 5) return { label: 'Moderate potential improvement', range: 'roughly 5–15%', className: 'text-yellow-400' }
-  if (score <= 8) return { label: 'High potential improvement', range: 'roughly 15–25%', className: 'text-ft-orange' }
-  return { label: 'Very high potential improvement', range: 'roughly 25%+', className: 'text-ft-orange' }
+  if (score <= 0) return { label: 'Already optimized', range: 'No further predicted gain from these tweaks', colorVar: 'var(--color-status-good)' }
+  if (score <= 2) return { label: 'Low potential improvement', range: 'roughly 0–5%', colorVar: 'rgba(255,255,255,0.6)' }
+  if (score <= 5) return { label: 'Moderate potential improvement', range: 'roughly 5–15%', colorVar: 'var(--color-status-warning)' }
+  if (score <= 8) return { label: 'High potential improvement', range: 'roughly 15–25%', colorVar: 'var(--color-status-serious)' }
+  return { label: 'Very high potential improvement', range: 'roughly 25%+', colorVar: 'var(--color-status-critical)' }
 }
 
 export default function FpsEstimator(): React.JSX.Element {
@@ -38,7 +43,7 @@ export default function FpsEstimator(): React.JSX.Element {
   const profile = GAME_PROFILES.find((p) => p.id === profileId) ?? GAME_PROFILES[0]
 
   const { score, availableTweaks } = useMemo(() => {
-    if (!report) return { score: 0, availableTweaks: [] as { id: string; name: string; impact: FpsImpact }[] }
+    if (!report) return { score: 0, availableTweaks: [] as { id: string; name: string; impact: FpsImpact; category: string }[] }
     const resultByTweak = new Map(report.results.map((r) => [r.tweakId, r]))
 
     const relevant = ALL_TWEAKS.filter((t) => t.fpsImpact !== 'none')
@@ -57,21 +62,25 @@ export default function FpsEstimator(): React.JSX.Element {
 
     return {
       score: total,
-      availableTweaks: notYetApplied.map((t) => ({ id: t.id, name: t.name, impact: t.fpsImpact }))
+      availableTweaks: notYetApplied.map((t) => ({ id: t.id, name: t.name, impact: t.fpsImpact, category: t.category }))
     }
   }, [report, profile])
 
   const tier = tierFor(score)
+  const gaugeValue = Math.min(100, (score / GAUGE_MAX_SCORE) * 100)
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-4xl text-ft-orange">FPS Estimator</h1>
+      <h1 className="flex items-center gap-3 text-4xl text-ft-orange">
+        <IconBolt className="h-8 w-8" /> FPS Estimator
+      </h1>
       <p className="mt-2 text-white/60">
         A rough, qualitative estimate of how much headroom is left on this PC — not a guaranteed
         number. Actual results depend entirely on your hardware and existing setup.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="ft-glass mt-6 flex flex-wrap items-center gap-3 p-4">
+        <IconGamepad className="h-5 w-5 text-ft-orange/70" />
         <label htmlFor="game-mode" className="text-sm text-white/50">
           Game mode
         </label>
@@ -79,7 +88,7 @@ export default function FpsEstimator(): React.JSX.Element {
           id="game-mode"
           value={profileId}
           onChange={(e) => setProfileId(e.target.value)}
-          className="rounded border border-white/10 bg-ft-black px-3 py-1.5 text-sm text-white"
+          className="rounded border border-white/15 bg-black/40 px-3 py-1.5 text-sm text-white"
         >
           {GAME_PROFILES.map((p) => (
             <option key={p.id} value={p.id}>
@@ -91,7 +100,7 @@ export default function FpsEstimator(): React.JSX.Element {
           type="button"
           onClick={runScan}
           disabled={scanning}
-          className="text-sm text-white/40 underline hover:text-white/70 disabled:opacity-40"
+          className="ml-auto text-sm text-white/40 underline hover:text-white/70 disabled:opacity-40"
         >
           {scanning ? 'Scanning…' : report ? 'Rescan' : 'Scan This PC'}
         </button>
@@ -102,24 +111,39 @@ export default function FpsEstimator(): React.JSX.Element {
       )}
 
       {report && (
-        <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-5">
-          <p className={`ft-heading text-2xl ${tier.className}`}>{tier.label}</p>
-          <p className="mt-1 text-sm text-white/50">{tier.range} for {profile.name.toLowerCase()}</p>
+        <div className="ft-glass mt-6 p-5">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+            <Gauge label="Headroom" value={gaugeValue} size={140} />
+            <div className="flex-1 text-center sm:text-left">
+              <p className="ft-heading text-2xl" style={{ color: tier.colorVar }}>
+                {tier.label}
+              </p>
+              <p className="mt-1 text-sm text-white/50">
+                {tier.range} for {profile.name.toLowerCase()}
+              </p>
+            </div>
+          </div>
 
           {availableTweaks.length > 0 ? (
-            <div className="mt-4 border-t border-white/10 pt-3">
+            <div className="mt-5 border-t border-white/10 pt-4">
               <p className="text-xs text-white/40">Based on {availableTweaks.length} not-yet-applied tweak(s):</p>
-              <ul className="mt-2 flex flex-col gap-1 text-sm text-white/70">
+              <ul className="mt-2 flex flex-col gap-1.5 text-sm text-white/70">
                 {availableTweaks.map((t) => (
-                  <li key={t.id} className="flex justify-between">
-                    <span>{t.name}</span>
+                  <li key={t.id} className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: CATEGORY_COLORS[t.category as keyof typeof CATEGORY_COLORS] }}
+                      />
+                      {t.name}
+                    </span>
                     <span className="text-white/40 capitalize">{t.impact} impact</span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-white/40">
+            <p className="mt-4 border-t border-white/10 pt-4 text-sm text-white/40">
               Every performance-relevant tweak Flow Tweaks knows about is already enabled here.
             </p>
           )}

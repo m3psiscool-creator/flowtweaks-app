@@ -8,10 +8,13 @@ export const STATE_LABELS: Record<TweakCurrentState, string> = {
   unknown: 'Unknown'
 }
 
+// Validated status palette (dataviz skill — CVD + contrast checked against this app's real
+// #0d0d0d surface), not ad-hoc Tailwind colors. "not-enabled"/"unknown" stay neutral gray on
+// purpose — they aren't a good or bad outcome, just "nothing to report."
 export const STATE_CLASSES: Record<TweakCurrentState, string> = {
-  'already-enabled': 'bg-green-500/15 text-green-400',
+  'already-enabled': 'bg-status-good/15 text-status-good',
   'not-enabled': 'bg-white/10 text-white/60',
-  partial: 'bg-yellow-500/15 text-yellow-400',
+  partial: 'bg-status-warning/15 text-status-warning',
   unknown: 'bg-white/5 text-white/40'
 }
 
@@ -22,7 +25,7 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
 }
 
 export const RISK_CLASSES: Record<RiskLevel, string> = {
-  low: 'bg-white/10 text-white/60',
-  medium: 'bg-yellow-500/15 text-yellow-400',
-  high: 'bg-red-500/15 text-red-400'
+  low: 'bg-status-good/15 text-status-good',
+  medium: 'bg-status-warning/15 text-status-warning',
+  high: 'bg-status-critical/15 text-status-critical'
 }

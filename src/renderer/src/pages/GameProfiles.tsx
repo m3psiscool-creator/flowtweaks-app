@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { GAME_PROFILES, type GameProfile } from '@data/gameProfiles'
-import type { TweakDefinition } from '@data/schema'
+import { CATEGORY_COLORS, type TweakDefinition } from '@data/schema'
 import { getTweakById } from '@data/tweaks'
 import { APPLY_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
 import ResultsReport from '@renderer/components/ResultsReport'
+import { IconGamepad } from '@renderer/components/icons'
 
 function ProfileCard({
   profile,
@@ -22,13 +23,17 @@ function ProfileCard({
   const applyableIds = profile.tweakIds.filter((id) => APPLY_ENABLED_TWEAK_IDS.has(id))
 
   return (
-    <div className="ft-hoverable rounded-lg border border-white/10 bg-white/5 p-5">
-      <h3 className="ft-heading text-xl text-white">{profile.name}</h3>
+    <div className="ft-glass ft-glass-hover p-5">
+      <div className="flex items-center gap-2.5">
+        <IconGamepad className="h-5 w-5 text-ft-orange" />
+        <h3 className="ft-heading text-xl text-white">{profile.name}</h3>
+      </div>
       <p className="mt-1 text-sm text-white/50">{profile.description}</p>
 
       <div className="mt-4 flex flex-col gap-1.5">
         {bundleTweaks.map((tweak) => (
-          <div key={tweak.id} className="text-xs text-white/70">
+          <div key={tweak.id} className="flex items-center gap-2 text-xs text-white/70">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[tweak.category] }} />
             {tweak.name}
           </div>
         ))}
@@ -72,7 +77,7 @@ export default function GameProfiles(): React.JSX.Element {
           {result.restorePointCreated ? (
             <ResultsReport results={result.results} />
           ) : (
-            <p className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            <p className="rounded-xl border border-status-critical/30 bg-status-critical/10 p-3 text-sm text-status-critical">
               Nothing was applied — couldn&apos;t create a restore point first. {result.restorePointError}
             </p>
           )}

@@ -59,7 +59,9 @@ app.whenReady().then(async () => {
   // Most tweaks need admin rights (HKLM writes, restore points), so the app asks for elevation
   // up front via a real UAC prompt rather than making the customer relaunch it manually. Declined
   // or failed elevation isn't fatal — falls through to running unelevated, same as always.
-  if (process.platform === 'win32' && (await relaunchElevatedIfNeeded())) {
+  // FLOWTWEAKS_SKIP_ELEVATE exists purely for automated UI testing (Playwright launches can't
+  // follow a UAC relaunch into a new, untracked process) — never set in a real customer launch.
+  if (process.platform === 'win32' && !process.env['FLOWTWEAKS_SKIP_ELEVATE'] && (await relaunchElevatedIfNeeded())) {
     app.quit()
     return
   }

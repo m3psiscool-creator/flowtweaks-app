@@ -4,18 +4,18 @@ import Home from '@renderer/pages/Home'
 import Optimizations from '@renderer/pages/Optimizations'
 import FpsEstimator from '@renderer/pages/FpsEstimator'
 import GameProfiles from '@renderer/pages/GameProfiles'
-import BoostMode from '@renderer/pages/BoostMode'
 import Restore from '@renderer/pages/Restore'
 import Diagnostics from '@renderer/pages/Diagnostics'
 import Account from '@renderer/pages/Account'
 import About from '@renderer/pages/About'
 
+// BoostMode.tsx still exists and works — it's just not routed here. See Sidebar.tsx's NAV_ITEMS
+// comment for why it was cut from the UI.
 const PAGES: Record<string, () => React.JSX.Element> = {
   home: Home,
   optimizations: Optimizations,
   'fps-estimator': FpsEstimator,
   'game-profiles': GameProfiles,
-  'boost-mode': BoostMode,
   restore: Restore,
   diagnostics: Diagnostics,
   account: Account,

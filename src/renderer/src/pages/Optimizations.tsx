@@ -25,6 +25,7 @@ export default function Optimizations(): React.JSX.Element {
   const categories = useMemo(() => {
     const order: Category[] = [
       'fps-latency',
+      'input',
       'gpu',
       'windows-performance',
       'network',
@@ -32,7 +33,8 @@ export default function Optimizations(): React.JSX.Element {
       'startup-programs',
       'storage-cleanup',
       'game-specific',
-      'personalization'
+      'personalization',
+      'privacy-noise'
     ]
     return order
       .map((category) => ({ category, tweaks: ALL_TWEAKS.filter((t) => t.category === category) }))
@@ -184,7 +186,6 @@ export default function Optimizations(): React.JSX.Element {
                       key={tweak.id}
                       tweak={tweak}
                       result={tweakResult}
-                      applyUnavailable={!applyEnabled}
                       selection={
                         applyEnabled
                           ? {

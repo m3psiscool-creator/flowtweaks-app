@@ -1,18 +1,34 @@
+import {
+  IconComputer,
+  IconBolt,
+  IconCpu,
+  IconGamepad,
+  IconClock,
+  IconShield,
+  IconUser,
+  IconInfo
+} from '@renderer/components/icons'
+
 export interface NavItem {
   key: string
   label: string
+  icon: (props: { className?: string }) => React.JSX.Element
 }
 
+// Boost Mode is deliberately not listed here — its code stays in the repo (see BoostMode.tsx),
+// but independent research showed the underlying mechanism (pausing background apps + a couple of
+// temp tweaks around game launch) delivers no measurable gain on the hardware this app targets.
+// Cut from the UI rather than kept as a feature that doesn't do what it implies. Revisit only on
+// real customer demand.
 export const NAV_ITEMS: NavItem[] = [
-  { key: 'home', label: 'Home' },
-  { key: 'optimizations', label: 'Optimizations' },
-  { key: 'fps-estimator', label: 'FPS Estimator' },
-  { key: 'game-profiles', label: 'Game Profiles' },
-  { key: 'boost-mode', label: 'Boost Mode' },
-  { key: 'restore', label: 'Restore' },
-  { key: 'diagnostics', label: 'Diagnostics' },
-  { key: 'account', label: 'Account' },
-  { key: 'about', label: 'About' }
+  { key: 'home', label: 'Home', icon: IconComputer },
+  { key: 'optimizations', label: 'Optimizations', icon: IconBolt },
+  { key: 'fps-estimator', label: 'FPS Estimator', icon: IconCpu },
+  { key: 'game-profiles', label: 'Game Profiles', icon: IconGamepad },
+  { key: 'restore', label: 'Restore', icon: IconClock },
+  { key: 'diagnostics', label: 'Diagnostics', icon: IconShield },
+  { key: 'account', label: 'Account', icon: IconUser },
+  { key: 'about', label: 'About', icon: IconInfo }
 ]
 
 interface SidebarProps {
@@ -32,12 +48,13 @@ export default function Sidebar({ active, onSelect }: SidebarProps): React.JSX.E
             <button
               type="button"
               onClick={() => onSelect(item.key)}
-              className={`ft-heading w-full rounded border-l-2 px-3 py-2 text-left text-lg tracking-wide transition-all duration-150 ${
+              className={`ft-heading flex w-full items-center gap-2.5 rounded border-l-2 px-3 py-2 text-left text-lg tracking-wide transition-all duration-150 ${
                 active === item.key
                   ? 'border-ft-orange bg-ft-orange text-ft-black shadow-[0_0_16px_-4px_rgba(255,85,0,0.8)]'
                   : 'border-transparent text-white/70 hover:translate-x-0.5 hover:border-ft-orange/50 hover:bg-white/5 hover:text-white'
               }`}
             >
+              <item.icon className="h-4 w-4 shrink-0" />
               {item.label}
             </button>
           </li>

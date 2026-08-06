@@ -1,3 +1,5 @@
+import { IconSparkle, IconClock, IconShield, IconInfo } from '@renderer/components/icons'
+
 interface StepProps {
   n: number
   title: string
@@ -21,7 +23,9 @@ function Step({ n, title, children }: StepProps): React.JSX.Element {
 export default function About(): React.JSX.Element {
   return (
     <div className="max-w-2xl">
-      <h1 className="text-4xl text-ft-orange">About Flow Tweaks</h1>
+      <h1 className="flex items-center gap-3 text-4xl text-ft-orange">
+        <IconSparkle className="h-8 w-8" /> About Flow Tweaks
+      </h1>
       <p className="mt-3 text-white/60">
         Flow Tweaks applies the same PC optimizations we&apos;d normally apply by hand over a
         remote session — registry changes, debloating, power settings, and network tuning — but it
@@ -29,7 +33,7 @@ export default function About(): React.JSX.Element {
         itself.
       </p>
 
-      <section className="mt-8">
+      <section className="ft-glass mt-8 p-5">
         <h2 className="ft-heading text-xl text-white/80">How it works</h2>
         <div className="mt-4 flex flex-col gap-5">
           <Step n={1} title="Scan">
@@ -38,9 +42,7 @@ export default function About(): React.JSX.Element {
             what needs administrator rights.
           </Step>
           <Step n={2} title="Choose">
-            Click a card to select it, or use Run All to select everything eligible at once. One
-            tweak is unlocked free through the spin-the-wheel offer; the rest are part of the paid
-            package.
+            Click a card to select it, or use Run All to select everything eligible at once.
           </Step>
           <Step n={3} title="Apply">
             Before anything changes, Flow Tweaks creates a Windows restore point and saves the
@@ -55,17 +57,10 @@ export default function About(): React.JSX.Element {
         </div>
       </section>
 
-      <section className="mt-8">
-        <h2 className="ft-heading text-xl text-white/80">Boost Mode</h2>
-        <p className="mt-2 text-sm text-white/60">
-          An optional background watcher. Pick a game and the background programs you want paused
-          while it runs — Flow Tweaks applies a couple of temporary, instantly-reversible settings
-          when the game launches and puts everything back exactly as it was the moment it closes.
-        </p>
-      </section>
-
-      <section className="mt-8">
-        <h2 className="ft-heading text-xl text-white/80">Diagnostics &amp; support</h2>
+      <section className="ft-glass mt-6 p-5">
+        <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+          <IconClock className="h-5 w-5" /> Diagnostics &amp; support
+        </h2>
         <p className="mt-2 text-sm text-white/60">
           If something needs a second pair of eyes, Diagnostics can generate a support code from
           your real change history — send it to us on Discord and we can see exactly what was
@@ -73,9 +68,12 @@ export default function About(): React.JSX.Element {
         </p>
       </section>
 
-      <section className="mt-8">
-        <h2 className="ft-heading text-xl text-white/80">One honest note</h2>
-        <p className="mt-2 text-sm text-white/60">
+      <section className="ft-glass mt-6 p-5">
+        <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+          <IconShield className="h-5 w-5" /> One honest note
+        </h2>
+        <p className="mt-2 flex items-start gap-2 text-sm text-white/60">
+          <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
           Flow Tweaks won&apos;t promise a specific FPS number — results depend on your exact
           hardware and existing setup. It automates the majority of what we&apos;d do by hand,
           safely. Unusual problems — driver issues, BIOS settings, overheating, corrupted Windows

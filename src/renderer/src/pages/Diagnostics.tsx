@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { getTweakById } from '@data/tweaks'
 import { useDiagnostics } from '@renderer/hooks/useDiagnostics'
+import { IconClock, IconAlertTriangle, IconShield, IconInfo } from '@renderer/components/icons'
 
 const DISCORD_URL = 'https://discord.gg/R5hEsssQgd'
 
@@ -52,15 +53,20 @@ export default function Diagnostics(): React.JSX.Element {
       </p>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-          <h2 className="ft-heading text-xl text-white/80">Optimization History</h2>
+        <section className="ft-glass p-5">
+          <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+            <IconClock className="h-5 w-5" /> Optimization History
+          </h2>
           {loading ? (
             <p className="mt-3 text-sm text-white/40">Loading…</p>
           ) : !report || report.sessions.length === 0 ? (
             <p className="mt-3 text-sm text-white/40">No optimizations applied yet.</p>
           ) : (
             <div className="mt-3 text-sm">
-              <p className="text-white/70">{totalApplied} change(s) applied across {report.sessions.length} session(s)</p>
+              <p className="text-white/70">
+                <span className="ft-heading text-lg text-status-good">{totalApplied}</span> change(s) applied
+                across {report.sessions.length} session(s)
+              </p>
               <p className="mt-1 text-white/40">
                 Last run: {lastOptimizationDate ? new Date(lastOptimizationDate).toLocaleString() : '—'}
               </p>
@@ -68,19 +74,21 @@ export default function Diagnostics(): React.JSX.Element {
           )}
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-white/5 p-5">
-          <h2 className="ft-heading text-xl text-white/80">Failed Changes</h2>
+        <section className="ft-glass p-5">
+          <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+            <IconAlertTriangle className="h-5 w-5" /> Failed Changes
+          </h2>
           {loading ? (
             <p className="mt-3 text-sm text-white/40">Loading…</p>
           ) : failedEntries.length === 0 ? (
-            <p className="mt-3 text-sm text-white/40">None — everything that ran, applied cleanly.</p>
+            <p className="mt-3 text-sm text-status-good">None — everything that ran, applied cleanly.</p>
           ) : (
             <div className="mt-3 flex flex-col gap-2 text-sm">
               {failedEntries.map(({ session, entry }) => (
-                <div key={entry.id} className="border-b border-white/5 pb-2 text-red-400">
+                <div key={entry.id} className="border-b border-white/5 pb-2 text-status-critical">
                   <span className="text-white/70">{getTweakById(entry.tweakId)?.name ?? entry.tweakId}</span>{' '}
                   — {entry.outcome}
-                  {entry.errorMessage && <p className="mt-0.5 text-xs text-red-400/70">{entry.errorMessage}</p>}
+                  {entry.errorMessage && <p className="mt-0.5 text-xs text-status-critical/70">{entry.errorMessage}</p>}
                   <p className="text-xs text-white/30">{new Date(session.createdAt).toLocaleString()}</p>
                 </div>
               ))}
@@ -88,7 +96,7 @@ export default function Diagnostics(): React.JSX.Element {
           )}
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+        <section className="ft-glass p-5">
           <h2 className="ft-heading text-xl text-white/80">Export Diagnostic Report</h2>
           <p className="mt-1 text-sm text-white/40">
             Saves specs, current scan state, and full change history to a file you choose.
@@ -108,7 +116,7 @@ export default function Diagnostics(): React.JSX.Element {
           )}
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-white/5 p-5">
+        <section className="ft-glass p-5">
           <h2 className="ft-heading text-xl text-white/80">Support Code</h2>
           <p className="mt-1 text-sm text-white/40">
             Generates a code tied to a saved diagnostic snapshot. Give the code and the file to
@@ -133,7 +141,7 @@ export default function Diagnostics(): React.JSX.Element {
             </a>
           </div>
           {supportCode && (
-            <div className="mt-3 rounded border border-ft-orange/30 bg-ft-orange/10 p-3 text-sm">
+            <div className="mt-3 rounded-xl border border-ft-orange/30 bg-ft-orange/10 p-3 text-sm">
               <p className="ft-heading text-lg tracking-widest text-ft-orange">{supportCode.code}</p>
               <p className="mt-1 text-xs text-white/50">
                 Saved to {supportCode.filePath} — attach this file when you open your ticket.
@@ -149,9 +157,12 @@ export default function Diagnostics(): React.JSX.Element {
           )}
         </section>
 
-        <section className="rounded-lg border border-red-500/20 bg-red-500/5 p-5 lg:col-span-2">
-          <h2 className="ft-heading text-xl text-red-400">Restore Default Windows Settings</h2>
-          <p className="mt-1 text-sm text-white/50">
+        <section className="ft-glass border-status-critical/25 p-5 lg:col-span-2">
+          <h2 className="ft-heading flex items-center gap-2 text-xl text-status-critical">
+            <IconShield className="h-5 w-5" /> Restore Default Windows Settings
+          </h2>
+          <p className="mt-1 flex items-start gap-2 text-sm text-white/50">
+            <IconInfo className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
             Reverts every applied change across every session back to its exact previous value —
             same underlying mechanism as Restore, applied to everything at once. This does not
             touch tweaks that already failed to apply or were already reverted.
@@ -160,12 +171,12 @@ export default function Diagnostics(): React.JSX.Element {
             type="button"
             onClick={restoreDefaults}
             disabled={restoringDefaults}
-            className="ft-heading mt-3 rounded border border-red-500/50 px-4 py-2 text-sm tracking-wide text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-40"
+            className="ft-heading mt-3 rounded border border-status-critical/50 px-4 py-2 text-sm tracking-wide text-status-critical transition-colors hover:bg-status-critical/10 disabled:opacity-40"
           >
             {restoringDefaults ? 'Restoring…' : 'Restore Defaults'}
           </button>
           {restoreDefaultsResult && (
-            <p className={`mt-2 text-sm ${restoreDefaultsResult.success ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`mt-2 text-sm ${restoreDefaultsResult.success ? 'text-status-good' : 'text-status-critical'}`}>
               {restoreDefaultsResult.success
                 ? 'All applied changes reverted.'
                 : restoreDefaultsResult.error}
