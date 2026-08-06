@@ -10,7 +10,8 @@ import type {
   RevertResult,
   ScanReport,
   SystemSpecs,
-  SystemUsage
+  SystemUsage,
+  WheelState
 } from '../shared/ipc-types'
 
 const api = {
@@ -41,6 +42,10 @@ const api = {
       ipcRenderer.invoke('restore:revertSession', sessionId),
     revertTweakInSession: (sessionId: string, tweakId: string): Promise<RevertResult> =>
       ipcRenderer.invoke('restore:revertTweakInSession', sessionId, tweakId)
+  },
+  wheel: {
+    getState: (): Promise<WheelState> => ipcRenderer.invoke('wheel:getState'),
+    spin: (): Promise<WheelState> => ipcRenderer.invoke('wheel:spin')
   }
 }
 

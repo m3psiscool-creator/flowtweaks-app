@@ -189,3 +189,12 @@ export interface DnsOverrideInfo {
   ipv4Servers: string[] | null
   ipv6Servers: string[] | null
 }
+
+// --- Wheel spin (one-time free unlock, no account needed) ---
+
+export interface WheelState {
+  spun: boolean
+  /** Which tweak the spin unlocked — null until spun. Always the same tweak once spun. */
+  unlockedTweakId: string | null
+  spunAt: string | null
+}

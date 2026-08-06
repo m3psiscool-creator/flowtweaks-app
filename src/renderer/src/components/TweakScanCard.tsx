@@ -14,6 +14,12 @@ interface TweakScanCardProps {
   }
   /** True when this specific tweak hasn't had its apply logic enabled yet. */
   applyUnavailable?: boolean
+  /** Set when this tweak is part of the paid package and hasn't been unlocked (paid or won) yet. */
+  locked?: {
+    onUnlockClick: () => void
+  }
+  /** True when this tweak was unlocked for free via the wheel spin, not purchased. */
+  freeUnlock?: boolean
   /** DNS-specific: only set when the sole incompatibility is "custom DNS already configured." */
   override?: {
     confirmed: boolean
@@ -27,6 +33,8 @@ export default function TweakScanCard({
   result,
   selection,
   applyUnavailable,
+  locked,
+  freeUnlock,
   override
 }: TweakScanCardProps): React.JSX.Element {
   const compatible = result?.compatible ?? true
@@ -64,6 +72,8 @@ export default function TweakScanCard({
           {override?.confirmed && (
             <Pill label="Override confirmed" className="bg-ft-orange/15 text-ft-orange" />
           )}
+          {locked && <Pill label="Locked" className="bg-white/10 text-white/50" />}
+          {freeUnlock && <Pill label="Free Unlock" className="bg-ft-orange/15 text-ft-orange" />}
         </div>
       </div>
 
@@ -94,6 +104,16 @@ export default function TweakScanCard({
 
       {selection?.disabledReason && !canSelect && !alreadyEnabled && (
         <p className="mt-2 text-sm text-white/30">{selection.disabledReason}</p>
+      )}
+
+      {locked && (
+        <button
+          type="button"
+          onClick={locked.onUnlockClick}
+          className="ft-heading mt-2 rounded bg-ft-orange px-3 py-1.5 text-xs tracking-wide text-ft-black transition-opacity hover:opacity-90"
+        >
+          Unlock Full Package — $11.99
+        </button>
       )}
 
       <div className="mt-3 flex gap-4 text-xs text-white/30">

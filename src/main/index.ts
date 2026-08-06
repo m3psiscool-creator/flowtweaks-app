@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerSystemIpcHandlers, startUsagePush } from './ipc/system'
 import { registerTweaksIpcHandlers } from './ipc/tweaks'
 import { registerRestoreIpcHandlers } from './ipc/restore'
+import { registerWheelIpcHandlers } from './ipc/wheel'
 import { reconcilePendingEntries } from './restore/reconcile'
 
 function createWindow(): void {
@@ -49,6 +50,7 @@ app.whenReady().then(async () => {
   registerSystemIpcHandlers()
   registerTweaksIpcHandlers()
   registerRestoreIpcHandlers()
+  registerWheelIpcHandlers()
 
   // Resolve any change log entries left 'pending' by a crash before the UI can touch them.
   await reconcilePendingEntries()

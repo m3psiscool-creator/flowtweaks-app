@@ -1,26 +1,54 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ALL_TWEAKS } from '@data/tweaks'
+import { ALL_TWEAKS, getTweakById } from '@data/tweaks'
 import { CATEGORY_LABELS, type Category } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
+import { useWheel } from '@renderer/hooks/useWheel'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
+import WheelSpinModal from '@renderer/components/WheelSpinModal'
 
-// Per CLAUDE.md's phased plan: enable applying one low-risk tweak at a time, not a whole
-// category at once — fps-latency also contains CPU & Network Scheduling, which is HKLM,
-// admin-required, and restart-required, so it stays disabled even though its category-mates
-// are enabled. dark-mode/game-mode/fullscreen-optimizations are HKCU-only, no-admin, no-restart,
-// registry-only tweaks. dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline.
-const APPLY_ENABLED_TWEAK_IDS = new Set(['dark-mode', 'game-mode', 'fullscreen-optimizations', 'dns-cloudflare'])
+// Backend licensing doesn't exist yet (see CLAUDE.md's later-phases list), so there's no real
+// in-app purchase/license check to run. The unlock CTA just opens the website's pricing section —
+// once a customer pays there today, licensing wiring is a separate, later phase.
+const CHECKOUT_URL = 'https://flowtweaks.com/#pricing'
+
+// All remaining registry-only tweaks are enabled here — applyOperation.ts already supports
+// 'registry' fully (DWORD/SZ/BINARY), and applyTweak.ts gates admin-required tweaks behind a real
+// elevation check (needs-manual-review, not a crash) per CLAUDE.md's hard rule on graceful
+// elevation handling. disable-memory-integrity is deliberately excluded — it's a security feature
+// (Core Isolation) and high risk, pending a dedicated extra-confirmation UX before it's enabled.
+// dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline; sfc-scan is an
+// externalTool, not registry, and isn't supported by applyOperation.ts yet.
+const APPLY_ENABLED_TWEAK_IDS = new Set([
+  'dark-mode',
+  'game-mode',
+  'fullscreen-optimizations',
+  'scheduling-registry-tweaks',
+  'hags',
+  'disable-fast-startup',
+  'visual-effects',
+  'dns-cloudflare'
+])
 
 export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
   const { applying, result, apply, reset } = useApply()
+  const { state: wheelState, spin: wheelSpin } = useWheel()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
   const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
+  const [wheelModalOpen, setWheelModalOpen] = useState(false)
+
+  // Empty until the wheel is spun — every apply-enabled tweak is paid content until then, per the
+  // "free spin, no account" mechanic. Only ever grows by exactly the one wheel prize right now;
+  // real purchased licenses will merge into this same set once backend licensing exists.
+  const unlockedTweakIds = useMemo(
+    () => new Set(wheelState?.unlockedTweakId ? [wheelState.unlockedTweakId] : []),
+    [wheelState]
+  )
 
   useEffect(() => {
     runScan()
@@ -99,6 +127,27 @@ export default function Optimizations(): React.JSX.Element {
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
+      {wheelState && !wheelState.spun && (
+        <div className="mt-4 flex items-center justify-between rounded border border-ft-orange/30 bg-ft-orange/10 p-3">
+          <p className="text-sm text-white">
+            🎡 You have a free tweak unlock waiting — no account, no cost.
+          </p>
+          <button
+            type="button"
+            onClick={() => setWheelModalOpen(true)}
+            className="ft-heading rounded bg-ft-orange px-4 py-1.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
+          >
+            Spin Now
+          </button>
+        </div>
+      )}
+      {wheelState?.spun && wheelState.unlockedTweakId && (
+        <p className="mt-4 text-xs text-white/40">
+          Free unlock: {getTweakById(wheelState.unlockedTweakId)?.name ?? wheelState.unlockedTweakId} —
+          everything else needs the full package.
+        </p>
+      )}
+
       {result && (
         <div className="mt-4">
           {result.restorePointCreated ? (
@@ -124,6 +173,7 @@ export default function Optimizations(): React.JSX.Element {
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {tweaks.map((tweak) => {
                   const applyEnabled = APPLY_ENABLED_TWEAK_IDS.has(tweak.id)
+                  const unlocked = unlockedTweakIds.has(tweak.id)
                   const tweakResult = resultByTweakId.get(tweak.id)
                   return (
                     <TweakScanCard
@@ -131,8 +181,12 @@ export default function Optimizations(): React.JSX.Element {
                       tweak={tweak}
                       result={tweakResult}
                       applyUnavailable={!applyEnabled}
+                      freeUnlock={applyEnabled && unlocked}
+                      locked={
+                        applyEnabled && !unlocked ? { onUnlockClick: () => window.open(CHECKOUT_URL, '_blank') } : undefined
+                      }
                       selection={
-                        applyEnabled
+                        applyEnabled && unlocked
                           ? {
                               selected: selected.has(tweak.id),
                               onToggle: () => toggle(tweak.id),
@@ -163,6 +217,10 @@ export default function Optimizations(): React.JSX.Element {
           onConfirm={confirmDnsOverride}
           onCancel={() => setDnsOverrideModalOpen(false)}
         />
+      )}
+
+      {wheelModalOpen && (
+        <WheelSpinModal onSpin={wheelSpin} onWon={() => runScan()} onClose={() => setWheelModalOpen(false)} />
       )}
     </div>
   )
