@@ -9,6 +9,7 @@ import { registerDiagnosticsIpcHandlers } from './ipc/diagnostics'
 import { registerBoostIpcHandlers, attachBoostStatusPush } from './ipc/boost'
 import { stopBoost, getBoostStatus } from './boost/boostService'
 import { registerAccountIpcHandlers } from './ipc/account'
+import { relaunchElevatedIfNeeded } from './system/selfElevate'
 import { reconcilePendingEntries } from './restore/reconcile'
 
 function createWindow(): void {
@@ -46,6 +47,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  // Most tweaks need admin rights (HKLM writes, restore points), so the app asks for elevation
+  // up front via a real UAC prompt rather than making the customer relaunch it manually. Declined
+  // or failed elevation isn't fatal — falls through to running unelevated, same as always.
+  if (process.platform === 'win32' && (await relaunchElevatedIfNeeded())) {
+    app.quit()
+    return
+  }
+
   electronApp.setAppUserModelId('com.flowtweaks.app')
 
   app.on('browser-window-created', (_, window) => {

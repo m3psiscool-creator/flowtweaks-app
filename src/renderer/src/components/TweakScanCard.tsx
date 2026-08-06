@@ -63,20 +63,6 @@ export default function TweakScanCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex items-start gap-2">
-          {selection && (
-            <span
-              aria-hidden="true"
-              className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                selected ? 'border-ft-orange bg-ft-orange text-ft-black' : 'border-white/30'
-              }`}
-            >
-              {selected && (
-                <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                  <path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
-          )}
           <h3 className="font-semibold text-white">{tweak.name}</h3>
         </div>
         <div className="flex flex-wrap gap-1.5">
