@@ -4,6 +4,7 @@ import { evaluateCompatibility } from './compatibility'
 import { applyOperation } from './applyOperation'
 import { captureSnapshots } from '../restore/snapshot'
 import { appendPendingEntry, updateEntryOutcome } from '../restore/changeLog'
+import { applyDnsCloudflareTweak } from './dns/applyDnsTweak'
 
 function snapshotMatchesDesired(operation: Operation, snapshot: SnapshotValue | null): boolean {
   if (!snapshot || operation.type !== 'registry' || snapshot.kind !== 'registry') return false
@@ -29,8 +30,15 @@ export async function applyTweak(
   specs: SystemSpecs,
   isElevated: boolean,
   sessionId: string,
-  enabledTweakIds: Set<string>
+  enabledTweakIds: Set<string>,
+  allowDnsOverride: boolean
 ): Promise<TweakApplyResult> {
+  // Network tweaks have their own pipeline (adapter selection, dynamic compatibility, connectivity
+  // verification with auto-revert) — they don't go through the generic registry-write loop at all.
+  if (tweak.apply.some((op) => op.type === 'networkDns')) {
+    return applyDnsCloudflareTweak(tweak, sessionId, allowDnsOverride)
+  }
+
   const unsupportedOp = tweak.apply.find((op) => op.type !== 'registry')
   if (unsupportedOp) {
     return {

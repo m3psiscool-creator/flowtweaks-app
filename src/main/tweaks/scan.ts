@@ -1,9 +1,11 @@
 import { ALL_TWEAKS } from '../../../data/tweaks'
+import type { TweakDefinition } from '../../../data/schema'
 import type { ScanReport, SystemSpecs, TweakCurrentState, TweakScanResult } from '../../shared/ipc-types'
 import { runPowerShell } from '../system/powershell'
 import { buildScanScript, collectDetectableOperations, keyFor } from './psScan'
 import { evaluateOperation, type OpDetectResult } from './evaluateOperation'
 import { evaluateCompatibility } from './compatibility'
+import { evaluateDnsScanState } from './dns/dnsScanState'
 
 function aggregateState(opResults: OpDetectResult[]): TweakCurrentState {
   if (opResults.length === 0) return 'unknown'
@@ -15,22 +17,33 @@ function aggregateState(opResults: OpDetectResult[]): TweakCurrentState {
   return 'partial'
 }
 
-export async function runScan(specs: SystemSpecs): Promise<ScanReport> {
-  const operations = collectDetectableOperations(ALL_TWEAKS)
+async function runBatchScan(registryLikeTweaks: TweakDefinition[]) {
+  const operations = collectDetectableOperations(registryLikeTweaks)
   const script = buildScanScript(operations)
-
-  let raw: Record<string, unknown> = {}
-  let isElevated = false
   try {
     const stdout = await runPowerShell(script)
-    raw = JSON.parse(stdout)
-    isElevated = raw.__elevated === true
+    const raw = JSON.parse(stdout) as Record<string, unknown>
+    return { operations, raw, isElevated: raw.__elevated === true }
   } catch {
     // Scan script itself failed to run — every tweak below falls back to 'unknown'.
+    return { operations, raw: {} as Record<string, unknown>, isElevated: false }
   }
+}
+
+export async function runScan(specs: SystemSpecs): Promise<ScanReport> {
+  const dnsTweaks = ALL_TWEAKS.filter((t) => t.apply.some((op) => op.type === 'networkDns'))
+  const registryLikeTweaks = ALL_TWEAKS.filter((t) => !dnsTweaks.includes(t))
+
+  // DNS's own dedicated, adapter-aware evaluation (see src/main/tweaks/dns/) is fully independent
+  // of the batched registry/service/powerPlan scan script — run both concurrently.
+  const [batch, dnsPartials] = await Promise.all([
+    runBatchScan(registryLikeTweaks),
+    Promise.all(dnsTweaks.map((tweak) => evaluateDnsScanState(tweak)))
+  ])
+  const { operations, raw, isElevated } = batch
 
   const stateByTweak = new Map<string, TweakCurrentState>()
-  for (const tweak of ALL_TWEAKS) {
+  for (const tweak of registryLikeTweaks) {
     const opResults = operations
       .filter((op) => op.tweakId === tweak.id)
       .map((op) => evaluateOperation(op.operation, raw[keyFor(op.tweakId, op.opIndex)]))
@@ -41,7 +54,7 @@ export async function runScan(specs: SystemSpecs): Promise<ScanReport> {
     [...stateByTweak.entries()].filter(([, state]) => state === 'already-enabled').map(([id]) => id)
   )
 
-  const results: TweakScanResult[] = ALL_TWEAKS.map((tweak) => {
+  const registryResults: TweakScanResult[] = registryLikeTweaks.map((tweak) => {
     const compat = evaluateCompatibility(tweak.compatibility, specs, enabledTweakIds)
     return {
       tweakId: tweak.id,
@@ -52,5 +65,10 @@ export async function runScan(specs: SystemSpecs): Promise<ScanReport> {
     }
   })
 
-  return { isElevated, results }
+  const dnsResults: TweakScanResult[] = dnsPartials.map((partial, i) => ({
+    ...partial,
+    needsElevation: dnsTweaks[i].requiresAdmin && !isElevated
+  }))
+
+  return { isElevated, results: [...registryResults, ...dnsResults] }
 }

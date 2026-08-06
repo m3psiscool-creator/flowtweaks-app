@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
+  ApplyOptions,
   ApplySessionResult,
   CreateRestorePointResult,
+  DnsOverrideInfo,
   RestorePointInfo,
   RestoreSession,
   RevertResult,
@@ -23,7 +25,10 @@ const api = {
   },
   tweaks: {
     scan: (): Promise<ScanReport> => ipcRenderer.invoke('tweaks:scan'),
-    apply: (tweakIds: string[]): Promise<ApplySessionResult> => ipcRenderer.invoke('tweaks:apply', tweakIds)
+    apply: (tweakIds: string[], options?: ApplyOptions): Promise<ApplySessionResult> =>
+      ipcRenderer.invoke('tweaks:apply', tweakIds, options),
+    getDnsOverrideInfo: (tweakId: string): Promise<DnsOverrideInfo | null> =>
+      ipcRenderer.invoke('tweaks:getDnsOverrideInfo', tweakId)
   },
   restore: {
     createPoint: (description?: string): Promise<CreateRestorePointResult> =>

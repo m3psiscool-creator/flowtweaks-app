@@ -1,13 +1,19 @@
 import { getTweakById } from '../../../data/tweaks'
-import type { ApplySessionResult, TweakApplyResult } from '../../shared/ipc-types'
+import type { ApplyOptions, ApplySessionResult, TweakApplyResult } from '../../shared/ipc-types'
 import { createRestorePoint } from '../restore/restorePoint'
 import { createSession } from '../restore/changeLog'
 import { getSystemSpecs } from '../system/systemInfo'
 import { isElevated } from '../system/elevation'
 import { applyTweak } from './applyTweak'
 
-/** Restore point first, always — no tweak is applied until it exists (CLAUDE.md hard rule #5). */
-export async function runApplySession(tweakIds: string[]): Promise<ApplySessionResult> {
+/**
+ * Restore point first, always — no tweak is applied until it exists (CLAUDE.md hard rule #5).
+ *
+ * `options.allowDnsOverride` must only ever be set by the explicit override-confirm UI action for
+ * the DNS tweak specifically — it's a single opt-in flag threaded through one apply call, never a
+ * default, and nothing about a bulk/profile apply (once that exists) should ever set it.
+ */
+export async function runApplySession(tweakIds: string[], options: ApplyOptions = {}): Promise<ApplySessionResult> {
   const restorePointResult = await createRestorePoint('Flow Tweaks — before applying tweaks')
   if (!restorePointResult.success) {
     return {
@@ -28,7 +34,7 @@ export async function runApplySession(tweakIds: string[]): Promise<ApplySessionR
     const tweak = getTweakById(id)
     if (!tweak) continue
 
-    const result = await applyTweak(tweak, specs, elevated, session.id, enabledTweakIds)
+    const result = await applyTweak(tweak, specs, elevated, session.id, enabledTweakIds, !!options.allowDnsOverride)
     results.push(result)
     if (result.outcome === 'applied' || result.outcome === 'already-enabled') {
       enabledTweakIds.add(tweak.id)

@@ -43,45 +43,11 @@ try {
   $result['${key}'] = $null
 }`
     }
-    case 'networkDns': {
-      return `
-try {
-  $ifaces = @()
-  $adapters = Get-NetAdapter -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' }
-  foreach ($a in $adapters) {
-    $ns = try { (Get-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\$($a.InterfaceGuid)" -Name NameServer -ErrorAction Stop).NameServer } catch { $null }
-    $static = if ([string]::IsNullOrWhiteSpace($ns)) { $null } else { @($ns -split ',') }
-    $ifaces += @{ interfaceIndex = [int]$a.IfIndex; interfaceAlias = $a.Name; staticServers = $static }
-  }
-  $result['${key}'] = @{ kind = 'networkDns'; interfaces = @($ifaces) }
-} catch {
-  $result['${key}'] = $null
-}`
-    }
+    // networkDns is handled entirely by src/main/tweaks/dns/ — adapter topology and connectivity
+    // verification don't fit this generic capture-a-value model, so it never reaches here.
     default:
       return `$result['${key}'] = $null`
   }
-}
-
-/** Windows PowerShell 5.1's ConvertTo-Json collapses 1-element arrays to scalars — normalize back after parsing. */
-function normalize(value: SnapshotValue | null): SnapshotValue | null {
-  if (!value) return value
-  if (value.kind === 'networkDns') {
-    const interfaces = Array.isArray(value.interfaces) ? value.interfaces : [value.interfaces]
-    return {
-      kind: 'networkDns',
-      interfaces: interfaces.map((i) => ({
-        ...i,
-        staticServers:
-          i.staticServers === null || i.staticServers === undefined
-            ? null
-            : Array.isArray(i.staticServers)
-              ? i.staticServers
-              : [i.staticServers]
-      }))
-    }
-  }
-  return value
 }
 
 export async function captureSnapshots(
@@ -102,10 +68,5 @@ exit 0
 `
   const stdout = await runPowerShell(script)
   if (!stdout) return {}
-  const raw = JSON.parse(stdout) as Record<string, SnapshotValue | null>
-  const out: Record<string, SnapshotValue | null> = {}
-  for (const [key, value] of Object.entries(raw)) {
-    out[key] = normalize(value)
-  }
-  return out
+  return JSON.parse(stdout) as Record<string, SnapshotValue | null>
 }

@@ -8,15 +8,18 @@ export interface ScanOperationKey {
 }
 
 /**
- * fileCleanup/externalTool have no persistent "already applied" state to
- * read back, so they're excluded from the scan script entirely — their
- * tweaks report currentState: 'unknown' by design.
+ * fileCleanup/externalTool have no persistent "already applied" state to read back, so they're
+ * excluded from the scan script entirely — their tweaks report currentState: 'unknown' by design.
+ * networkDns is excluded too, but for a different reason: it has its own dedicated, adapter-aware
+ * scan path (see src/main/tweaks/dns/) that doesn't fit this generic per-operation model at all.
  */
 export function collectDetectableOperations(tweaks: TweakDefinition[]): ScanOperationKey[] {
   const keys: ScanOperationKey[] = []
   for (const tweak of tweaks) {
     tweak.detect.forEach((operation, opIndex) => {
-      if (operation.type === 'fileCleanup' || operation.type === 'externalTool') return
+      if (operation.type === 'fileCleanup' || operation.type === 'externalTool' || operation.type === 'networkDns') {
+        return
+      }
       keys.push({ tweakId: tweak.id, opIndex, operation })
     })
   }
@@ -59,20 +62,6 @@ try {
 try {
   $plan = Get-CimInstance -Namespace root\\cimv2\\power -ClassName Win32_PowerPlan -Filter "IsActive='True'" -ErrorAction Stop
   $result['${key}'] = $plan.ElementName
-} catch {
-  $result['${key}'] = $null
-}`
-    }
-    case 'networkDns': {
-      return `
-try {
-  $servers = @()
-  $adapters = Get-NetAdapter -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' }
-  foreach ($a in $adapters) {
-    $d = try { Get-DnsClientServerAddress -InterfaceIndex $a.IfIndex -AddressFamily IPv4 -ErrorAction Stop } catch { $null }
-    if ($d) { $servers += $d.ServerAddresses }
-  }
-  $result['${key}'] = @($servers)
 } catch {
   $result['${key}'] = $null
 }`

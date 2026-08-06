@@ -2,6 +2,7 @@ import type { Operation } from '../../../data/schema'
 import type { RevertResult, SnapshotValue } from '../../shared/ipc-types'
 import { runPowerShell, psQuote } from '../system/powershell'
 import { buildRegistryWriteScript } from '../system/registryWrite'
+import { buildDnsWriteScript } from '../system/dnsWrite'
 
 function buildRegistryRevertScript(
   hive: 'HKCU' | 'HKLM',
@@ -68,14 +69,10 @@ exit 0`
       }
       script = `powercfg -setactive ${previousValue.activeGuid}`
     } else if (operation.type === 'networkDns' && previousValue.kind === 'networkDns') {
-      const perInterface = previousValue.interfaces.map((iface) => {
-        if (!iface.staticServers) {
-          return `try { Set-DnsClientServerAddress -InterfaceIndex ${iface.interfaceIndex} -ResetServerAddresses -ErrorAction Stop } catch {}`
-        }
-        const servers = iface.staticServers.map((s) => `'${psQuote(s)}'`).join(',')
-        return `try { Set-DnsClientServerAddress -InterfaceIndex ${iface.interfaceIndex} -ServerAddresses ${servers} -ErrorAction Stop } catch {}`
+      script = buildDnsWriteScript(previousValue.interfaceIndex, previousValue.ipv4.staticServers, {
+        touch: previousValue.ipv6.enabled,
+        servers: previousValue.ipv6.staticServers
       })
-      script = `${perInterface.join('\n')}\nexit 0`
     } else {
       return { success: false, error: `No revert handler for operation type "${operation.type}".` }
     }

@@ -6,17 +6,21 @@ import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
+import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
 
 // Per CLAUDE.md's phased plan: enable applying one low-risk tweak at a time, not a whole
 // category at once — fps-latency also contains CPU & Network Scheduling, which is HKLM,
 // admin-required, and restart-required, so it stays disabled even though its category-mates
-// are enabled. All three of these are HKCU-only, no-admin, no-restart, registry-only tweaks.
-const APPLY_ENABLED_TWEAK_IDS = new Set(['dark-mode', 'game-mode', 'fullscreen-optimizations'])
+// are enabled. dark-mode/game-mode/fullscreen-optimizations are HKCU-only, no-admin, no-restart,
+// registry-only tweaks. dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline.
+const APPLY_ENABLED_TWEAK_IDS = new Set(['dark-mode', 'game-mode', 'fullscreen-optimizations', 'dns-cloudflare'])
 
 export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
   const { applying, result, apply, reset } = useApply()
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
+  const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
 
   useEffect(() => {
     runScan()
@@ -55,9 +59,27 @@ export default function Optimizations(): React.JSX.Element {
     })
   }
 
+  function cancelDnsOverride(): void {
+    setDnsOverrideConfirmed(false)
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.delete('dns-cloudflare')
+      return next
+    })
+  }
+
+  function confirmDnsOverride(): void {
+    setDnsOverrideConfirmed(true)
+    setSelected((prev) => new Set(prev).add('dns-cloudflare'))
+    setDnsOverrideModalOpen(false)
+  }
+
   async function handleApply(): Promise<void> {
-    await apply([...selected])
+    // allowDnsOverride only ever comes from this one explicit, single-use confirmation — never a
+    // default, never something a future bulk/profile apply could accidentally inherit.
+    await apply([...selected], { allowDnsOverride: dnsOverrideConfirmed })
     setSelected(new Set())
+    setDnsOverrideConfirmed(false)
     runScan()
   }
 
@@ -102,11 +124,12 @@ export default function Optimizations(): React.JSX.Element {
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {tweaks.map((tweak) => {
                   const applyEnabled = APPLY_ENABLED_TWEAK_IDS.has(tweak.id)
+                  const tweakResult = resultByTweakId.get(tweak.id)
                   return (
                     <TweakScanCard
                       key={tweak.id}
                       tweak={tweak}
-                      result={resultByTweakId.get(tweak.id)}
+                      result={tweakResult}
                       applyUnavailable={!applyEnabled}
                       selection={
                         applyEnabled
@@ -117,6 +140,15 @@ export default function Optimizations(): React.JSX.Element {
                             }
                           : undefined
                       }
+                      override={
+                        tweakResult?.overrideAvailable
+                          ? {
+                              confirmed: dnsOverrideConfirmed,
+                              onStart: () => setDnsOverrideModalOpen(true),
+                              onCancel: cancelDnsOverride
+                            }
+                          : undefined
+                      }
                     />
                   )
                 })}
@@ -124,6 +156,14 @@ export default function Optimizations(): React.JSX.Element {
             </section>
           ))}
       </div>
+
+      {dnsOverrideModalOpen && (
+        <DnsOverrideModal
+          tweakId="dns-cloudflare"
+          onConfirm={confirmDnsOverride}
+          onCancel={() => setDnsOverrideModalOpen(false)}
+        />
+      )}
     </div>
   )
 }

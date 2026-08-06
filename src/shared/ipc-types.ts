@@ -43,6 +43,12 @@ export interface TweakScanResult {
   currentState: TweakCurrentState
   /** True if this tweak needs admin rights and the app isn't currently elevated. */
   needsElevation: boolean
+  /**
+   * True only when this tweak is incompatible *specifically* because the customer already has
+   * custom static DNS configured (not DHCP, not already Cloudflare) — the one incompatibility
+   * reason that has a deliberate, opt-in override path in the UI instead of just being a dead end.
+   */
+  overrideAvailable?: boolean
 }
 
 export interface ScanReport {
@@ -82,7 +88,12 @@ export interface PowerPlanSnapshotValue {
 
 export interface NetworkDnsSnapshotValue {
   kind: 'networkDns'
-  interfaces: Array<{ interfaceIndex: number; interfaceAlias: string; staticServers: string[] | null }>
+  interfaceIndex: number
+  interfaceAlias: string
+  /** null means DHCP/automatic (no static override) for that family. */
+  ipv4: { staticServers: string[] | null }
+  /** enabled false means IPv6 isn't bound on this adapter at all — never touched, never reported. */
+  ipv6: { enabled: boolean; staticServers: string[] | null }
 }
 
 export type SnapshotValue =
@@ -154,4 +165,27 @@ export interface ApplySessionResult {
   restorePointCreated: boolean
   restorePointError?: string
   results: TweakApplyResult[]
+}
+
+/** Only ever set true by the explicit override-confirm modal — never by a bulk/profile apply. */
+export interface ApplyOptions {
+  allowDnsOverride?: boolean
+}
+
+// --- DNS-specific (network tweaks are handled separately from the generic
+// registry pipeline — see the plan discussion for why adapter topology and
+// connectivity verification don't fit the declarative-rule model) ---
+
+export interface DnsAdapterInfo {
+  interfaceIndex: number
+  interfaceAlias: string
+  interfaceDescription: string
+  isVirtual: boolean
+}
+
+/** Current DNS servers on the primary adapter — shown to the customer before they decide to override. */
+export interface DnsOverrideInfo {
+  interfaceAlias: string
+  ipv4Servers: string[] | null
+  ipv6Servers: string[] | null
 }

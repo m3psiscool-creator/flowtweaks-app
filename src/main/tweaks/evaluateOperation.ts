@@ -51,18 +51,8 @@ export function evaluateOperation(operation: Operation, rawValue: unknown): OpDe
         : 'mismatch'
     }
 
-    case 'networkDns': {
-      if (rawValue === null || rawValue === undefined) return 'error'
-      const actual = (Array.isArray(rawValue) ? rawValue : [rawValue]).map((v) =>
-        String(v).toLowerCase()
-      )
-      if (actual.length === 0) return 'not-set'
-      const desired = operation.ipv4.map((s) => s.toLowerCase())
-      const allPresent = desired.every((d) => actual.includes(d))
-      return allPresent ? 'match' : 'mismatch'
-    }
-
-    // fileCleanup / externalTool never reach here — filtered out before detection runs.
+    // fileCleanup / externalTool / networkDns never reach here — filtered out before detection
+    // runs (networkDns has its own dedicated, adapter-aware scan path — see src/main/tweaks/dns/).
     default:
       return 'error'
   }

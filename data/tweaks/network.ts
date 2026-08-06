@@ -12,13 +12,9 @@ export const networkTweaks: TweakDefinition[] = [
     requiresRestart: false,
     reversible: true,
     compatibility: {},
-    detect: [
-      {
-        type: 'networkDns',
-        ipv4: ['1.1.1.1', '1.0.0.1'],
-        ipv6: ['2606:4700:4700::1111', '2606:4700:4700::1001']
-      }
-    ],
+    // Detection is handled by a dedicated, adapter-aware path (src/main/tweaks/dns/), not the
+    // generic per-operation scan — same convention as fileCleanup/externalTool tweaks.
+    detect: [],
     apply: [
       {
         type: 'networkDns',
