@@ -8,6 +8,7 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
     whatItChanges: 'Turns on Windows Game Mode, which deprioritizes background tasks in favor of the game in focus.',
     whyItMayHelp: 'Game Mode can reduce background interruptions and stutters while a game is running.',
     riskLevel: 'low',
+    fpsImpact: 'low',
     requiresAdmin: false,
     requiresRestart: false,
     reversible: true,
@@ -58,6 +59,7 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
     whyItMayHelp:
       'These are the same low-level scheduler values Windows itself uses to favor foreground games — raising them can reduce input lag and stutter under load.',
     riskLevel: 'medium',
+    fpsImpact: 'high',
     requiresAdmin: true,
     requiresRestart: true,
     reversible: true,
@@ -138,6 +140,7 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
     whatItChanges: 'Turns off Windows Fullscreen Optimizations so games run in true exclusive fullscreen when they request it.',
     whyItMayHelp: 'True exclusive fullscreen can reduce input latency compared to the borderless-style compositor Windows substitutes by default.',
     riskLevel: 'low',
+    fpsImpact: 'medium',
     requiresAdmin: false,
     requiresRestart: false,
     reversible: true,

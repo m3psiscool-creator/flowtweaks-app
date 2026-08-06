@@ -8,6 +8,7 @@ export const gpuTweaks: TweakDefinition[] = [
     whatItChanges: 'Turns on HAGS, letting your GPU manage its own memory queue instead of relying entirely on Windows.',
     whyItMayHelp: 'On supported drivers, HAGS can reduce latency by cutting out a layer of CPU-side scheduling overhead.',
     riskLevel: 'medium',
+    fpsImpact: 'medium',
     requiresAdmin: true,
     requiresRestart: true,
     reversible: true,

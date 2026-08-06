@@ -6,7 +6,7 @@ import { RISK_CLASSES, RISK_LABELS, STATE_CLASSES, STATE_LABELS } from '@rendere
 interface TweakScanCardProps {
   tweak: TweakDefinition
   result?: TweakScanResult
-  /** When provided, renders a checkbox and lets the card be selected for applying. */
+  /** When provided, the whole card becomes clickable to select it for applying. */
   selection?: {
     selected: boolean
     onToggle: () => void
@@ -40,21 +40,42 @@ export default function TweakScanCard({
   const compatible = result?.compatible ?? true
   const alreadyEnabled = result?.currentState === 'already-enabled'
   const canSelect = !!selection && compatible && !result?.needsElevation && !alreadyEnabled
+  const selected = !!selection?.selected
 
   return (
     <div
-      className={`rounded-lg border border-white/10 bg-white/5 p-4 ${compatible ? '' : 'opacity-50'}`}
+      role={canSelect ? 'button' : undefined}
+      tabIndex={canSelect ? 0 : undefined}
+      onClick={() => {
+        if (canSelect) selection!.onToggle()
+      }}
+      onKeyDown={(e) => {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          selection!.onToggle()
+        }
+      }}
+      className={`rounded-lg border p-4 transition-colors ${
+        selected
+          ? 'border-ft-orange bg-ft-orange/10'
+          : 'border-white/10 bg-white/5' + (canSelect ? ' hover:border-white/30' : '')
+      } ${compatible ? '' : 'opacity-50'} ${canSelect ? 'cursor-pointer' : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex items-start gap-2">
           {selection && (
-            <input
-              type="checkbox"
-              checked={selection.selected}
-              onChange={selection.onToggle}
-              disabled={!canSelect}
-              className="mt-1 accent-ft-orange"
-            />
+            <span
+              aria-hidden="true"
+              className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                selected ? 'border-ft-orange bg-ft-orange text-ft-black' : 'border-white/30'
+              }`}
+            >
+              {selected && (
+                <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
           )}
           <h3 className="font-semibold text-white">{tweak.name}</h3>
         </div>
@@ -87,7 +108,10 @@ export default function TweakScanCard({
       {override && !override.confirmed && (
         <button
           type="button"
-          onClick={override.onStart}
+          onClick={(e) => {
+            e.stopPropagation()
+            override.onStart()
+          }}
           className="mt-2 text-sm text-ft-orange underline hover:opacity-80"
         >
           Override and use Cloudflare DNS anyway…
@@ -96,7 +120,14 @@ export default function TweakScanCard({
       {override?.confirmed && (
         <div className="mt-2 flex items-center gap-2 text-sm">
           <span className="text-white/60">This run will replace your custom DNS servers.</span>
-          <button type="button" onClick={override.onCancel} className="text-white/40 underline hover:text-white/70">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              override.onCancel()
+            }}
+            className="text-white/40 underline hover:text-white/70"
+          >
             Cancel
           </button>
         </div>
@@ -109,7 +140,10 @@ export default function TweakScanCard({
       {locked && (
         <button
           type="button"
-          onClick={locked.onUnlockClick}
+          onClick={(e) => {
+            e.stopPropagation()
+            locked.onUnlockClick()
+          }}
           className="ft-heading mt-2 rounded bg-ft-orange px-3 py-1.5 text-xs tracking-wide text-ft-black transition-opacity hover:opacity-90"
         >
           Unlock Full Package — $11.99

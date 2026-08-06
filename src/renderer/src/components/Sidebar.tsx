@@ -5,13 +5,14 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { key: 'home', label: 'Home' },
-  { key: 'scan', label: 'Scan' },
   { key: 'optimizations', label: 'Optimizations' },
+  { key: 'fps-estimator', label: 'FPS Estimator' },
   { key: 'game-profiles', label: 'Game Profiles' },
   { key: 'boost-mode', label: 'Boost Mode' },
   { key: 'restore', label: 'Restore' },
   { key: 'diagnostics', label: 'Diagnostics' },
-  { key: 'account', label: 'Account' }
+  { key: 'account', label: 'Account' },
+  { key: 'about', label: 'About' }
 ]
 
 interface SidebarProps {

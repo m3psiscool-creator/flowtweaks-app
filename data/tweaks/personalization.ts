@@ -8,6 +8,7 @@ export const personalizationTweaks: TweakDefinition[] = [
     whatItChanges: 'Switches Windows apps and system UI to dark theme.',
     whyItMayHelp: 'Not a performance change — purely cosmetic preference, included because it\'s part of the standard setup pass.',
     riskLevel: 'low',
+    fpsImpact: 'none',
     requiresAdmin: false,
     requiresRestart: false,
     reversible: true,

@@ -120,6 +120,18 @@ export async function revertSession(sessionId: string): Promise<RevertResult> {
   return revertEntries(sessions, toRevert)
 }
 
+/**
+ * "Restore Default Windows Settings" from Diagnostics — every applied entry across every session,
+ * most-recent session first. Each entry reverts to its own captured previous value independently,
+ * so cross-session ordering doesn't affect correctness, only which log lines settle first.
+ */
+export async function revertAllSessions(): Promise<RevertResult> {
+  const sessions = await loadSessions()
+  const toRevert = sessions.flatMap((session) => [...session.entries].reverse().filter((e) => e.outcome === 'applied'))
+  if (toRevert.length === 0) return { success: true }
+  return revertEntries(sessions, toRevert)
+}
+
 /** Reverts one tweak's changes within a session — a tweak can span several logged entries (one per registry value it touched). */
 export async function revertTweakInSession(sessionId: string, tweakId: string): Promise<RevertResult> {
   const sessions = await loadSessions()

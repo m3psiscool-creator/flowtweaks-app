@@ -29,6 +29,15 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 
 export type RiskLevel = 'low' | 'medium' | 'high'
 
+/**
+ * A rough, qualitative bucket used only by the FPS Predictor to weight its estimate — never shown
+ * to the customer as a number, and never a guarantee. CLAUDE.md is explicit: never promise a
+ * specific FPS figure, since actual results depend entirely on hardware and existing config.
+ * 'none' covers tweaks that are real and worth doing but aren't performance-related at all
+ * (Dark Mode, disk cleanup, DNS) — they must not silently count toward a gain estimate.
+ */
+export type FpsImpact = 'none' | 'low' | 'medium' | 'high'
+
 export interface CompatibilityRule {
   /** Minimum Windows build number this tweak is safe to offer on. */
   minWindowsBuild?: number
@@ -98,6 +107,8 @@ export interface TweakDefinition {
   /** Plain-language rationale. Never state a specific FPS number or guarantee. */
   whyItMayHelp: string
   riskLevel: RiskLevel
+  /** Qualitative weight for the FPS Predictor only — see FpsImpact for why this is never a number. */
+  fpsImpact: FpsImpact
   requiresAdmin: boolean
   requiresRestart: boolean
   /**

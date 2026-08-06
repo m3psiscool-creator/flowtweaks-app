@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ALL_TWEAKS, getTweakById } from '@data/tweaks'
 import { CATEGORY_LABELS, type Category } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
@@ -50,11 +50,6 @@ export default function Optimizations(): React.JSX.Element {
     [wheelState]
   )
 
-  useEffect(() => {
-    runScan()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const resultByTweakId = useMemo(() => {
     const map = new Map<string, TweakScanResult>()
     report?.results.forEach((r) => map.set(r.tweakId, r))
@@ -77,6 +72,21 @@ export default function Optimizations(): React.JSX.Element {
       .map((category) => ({ category, tweaks: ALL_TWEAKS.filter((t) => t.category === category) }))
       .filter((group) => group.tweaks.length > 0)
   }, [])
+
+  // Everything a click-to-select card could actually select right now: apply-enabled, unlocked,
+  // and — per TweakScanCard's own canSelect gate — compatible, not already-enabled, and not
+  // blocked on elevation. Run All reuses this exact set instead of guessing at eligibility
+  // separately, so "select everything selectable" and "Run All" can never disagree.
+  const selectableTweakIds = useMemo(() => {
+    if (!report) return new Set<string>()
+    return new Set(
+      ALL_TWEAKS.filter((tweak) => {
+        if (!APPLY_ENABLED_TWEAK_IDS.has(tweak.id) || !unlockedTweakIds.has(tweak.id)) return false
+        const r = resultByTweakId.get(tweak.id)
+        return (r?.compatible ?? true) && !r?.needsElevation && r?.currentState !== 'already-enabled'
+      }).map((t) => t.id)
+    )
+  }, [report, unlockedTweakIds, resultByTweakId])
 
   function toggle(tweakId: string): void {
     setSelected((prev) => {
@@ -102,27 +112,54 @@ export default function Optimizations(): React.JSX.Element {
     setDnsOverrideModalOpen(false)
   }
 
-  async function handleApply(): Promise<void> {
+  async function runApply(tweakIds: string[]): Promise<void> {
     // allowDnsOverride only ever comes from this one explicit, single-use confirmation — never a
-    // default, never something a future bulk/profile apply could accidentally inherit.
-    await apply([...selected], { allowDnsOverride: dnsOverrideConfirmed })
+    // default, never something Run All could accidentally sweep in.
+    await apply(tweakIds, { allowDnsOverride: dnsOverrideConfirmed })
     setSelected(new Set())
     setDnsOverrideConfirmed(false)
     runScan()
   }
 
+  const handleApplySelected = (): Promise<void> => runApply([...selected])
+  const handleRunAll = (): Promise<void> => runApply([...selectableTweakIds])
+
   return (
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-4xl text-ft-orange">Optimizations</h1>
-        <button
-          type="button"
-          onClick={handleApply}
-          disabled={selected.size === 0 || applying}
-          className="ft-heading rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
-        >
-          {applying ? 'Applying…' : `Apply Selected (${selected.size})`}
-        </button>
+        <div className="flex items-center gap-3">
+          {report && (
+            <button
+              type="button"
+              onClick={runScan}
+              disabled={scanning || applying}
+              className="text-sm text-white/40 underline hover:text-white/70 disabled:opacity-40"
+            >
+              Rescan
+            </button>
+          )}
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={handleApplySelected}
+              disabled={applying}
+              className="ft-heading rounded border border-ft-orange px-4 py-2 text-sm tracking-wide text-ft-orange transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {applying ? 'Applying…' : `Apply Selected (${selected.size})`}
+            </button>
+          )}
+          {report && (
+            <button
+              type="button"
+              onClick={handleRunAll}
+              disabled={applying || selectableTweakIds.size === 0}
+              className="ft-heading rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {applying ? 'Applying…' : `Run All (${selectableTweakIds.size})`}
+            </button>
+          )}
+        </div>
       </div>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
@@ -148,6 +185,13 @@ export default function Optimizations(): React.JSX.Element {
         </p>
       )}
 
+      {report && !report.isElevated && (
+        <p className="mt-4 rounded border border-ft-orange/30 bg-ft-orange/10 p-3 text-sm text-ft-orange">
+          Not running as administrator — tweaks marked &quot;Needs Admin&quot; can be scanned but
+          won&apos;t be applicable until Flow Tweaks is relaunched elevated.
+        </p>
+      )}
+
       {result && (
         <div className="mt-4">
           {result.restorePointCreated ? (
@@ -163,7 +207,23 @@ export default function Optimizations(): React.JSX.Element {
         </div>
       )}
 
-      {scanning && !report && <p className="mt-6 text-sm text-white/40">Scanning this PC…</p>}
+      {!report && !scanning && (
+        <div className="mt-16 flex flex-col items-center gap-4 text-center">
+          <p className="max-w-md text-sm text-white/50">
+            Flow Tweaks reads your PC&apos;s current settings first — nothing is changed until you
+            choose to apply something.
+          </p>
+          <button
+            type="button"
+            onClick={runScan}
+            className="ft-heading rounded bg-ft-orange px-8 py-3 text-xl tracking-wide text-ft-black transition-opacity hover:opacity-90"
+          >
+            Scan To See Optimizations
+          </button>
+        </div>
+      )}
+
+      {scanning && !report && <p className="mt-16 text-center text-sm text-white/40">Scanning this PC…</p>}
 
       <div className="mt-6 flex flex-col gap-8">
         {report &&

@@ -8,6 +8,7 @@ export const networkTweaks: TweakDefinition[] = [
     whatItChanges: "Sets your network adapter's DNS servers to Cloudflare (1.1.1.1 / 1.0.0.1).",
     whyItMayHelp: 'Cloudflare\'s resolver is typically faster than an ISP default, which can shave time off game server/matchmaking lookups — it does not affect in-game ping.',
     riskLevel: 'low',
+    fpsImpact: 'none',
     requiresAdmin: true,
     requiresRestart: false,
     reversible: true,

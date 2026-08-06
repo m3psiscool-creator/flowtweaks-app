@@ -1,16 +1,25 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
+  AccountSession,
+  AccountTicket,
   ApplyOptions,
   ApplySessionResult,
+  BoostConfig,
+  BoostStatus,
   CreateRestorePointResult,
+  DiagnosticReport,
   DnsOverrideInfo,
+  ExportReportResult,
+  RequestCodeResult,
   RestorePointInfo,
   RestoreSession,
   RevertResult,
   ScanReport,
+  SupportCodeResult,
   SystemSpecs,
   SystemUsage,
+  TicketPlan,
   WheelState
 } from '../shared/ipc-types'
 
@@ -41,11 +50,42 @@ const api = {
     revertSession: (sessionId: string): Promise<RevertResult> =>
       ipcRenderer.invoke('restore:revertSession', sessionId),
     revertTweakInSession: (sessionId: string, tweakId: string): Promise<RevertResult> =>
-      ipcRenderer.invoke('restore:revertTweakInSession', sessionId, tweakId)
+      ipcRenderer.invoke('restore:revertTweakInSession', sessionId, tweakId),
+    revertAll: (): Promise<RevertResult> => ipcRenderer.invoke('restore:revertAll')
   },
   wheel: {
     getState: (): Promise<WheelState> => ipcRenderer.invoke('wheel:getState'),
     spin: (): Promise<WheelState> => ipcRenderer.invoke('wheel:spin')
+  },
+  diagnostics: {
+    getReport: (): Promise<DiagnosticReport> => ipcRenderer.invoke('diagnostics:getReport'),
+    exportReport: (): Promise<ExportReportResult> => ipcRenderer.invoke('diagnostics:exportReport'),
+    generateSupportCode: (): Promise<SupportCodeResult> =>
+      ipcRenderer.invoke('diagnostics:generateSupportCode'),
+    revealFile: (filePath: string): Promise<void> => ipcRenderer.invoke('diagnostics:revealFile', filePath)
+  },
+  boost: {
+    getStatus: (): Promise<BoostStatus> => ipcRenderer.invoke('boost:getStatus'),
+    start: (config: BoostConfig): Promise<BoostStatus> => ipcRenderer.invoke('boost:start', config),
+    stop: (): Promise<BoostStatus> => ipcRenderer.invoke('boost:stop'),
+    listRunningProcesses: (): Promise<string[]> => ipcRenderer.invoke('boost:listRunningProcesses'),
+    onStatus: (callback: (status: BoostStatus) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, status: BoostStatus): void => callback(status)
+      ipcRenderer.on('boost:status', listener)
+      return () => ipcRenderer.removeListener('boost:status', listener)
+    }
+  },
+  account: {
+    getSession: (): Promise<AccountSession | null> => ipcRenderer.invoke('account:getSession'),
+    requestCode: (email: string, plan?: TicketPlan): Promise<RequestCodeResult> =>
+      ipcRenderer.invoke('account:requestCode', email, plan),
+    verifyCode: (email: string, code: string): Promise<AccountSession> =>
+      ipcRenderer.invoke('account:verifyCode', email, code),
+    staffLogin: (username: string, password: string): Promise<AccountSession> =>
+      ipcRenderer.invoke('account:staffLogin', username, password),
+    logout: (): Promise<void> => ipcRenderer.invoke('account:logout'),
+    getMyTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getMyTickets'),
+    getStaffTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getStaffTickets')
   }
 }
 

@@ -198,3 +198,75 @@ export interface WheelState {
   unlockedTweakId: string | null
   spunAt: string | null
 }
+
+// --- Diagnostics ---
+
+/** A full, self-contained snapshot for support — everything staff would need without guessing. */
+export interface DiagnosticReport {
+  generatedAt: string
+  specs: SystemSpecs
+  scan: ScanReport
+  sessions: RestoreSession[]
+  wheel: WheelState
+}
+
+export interface SupportCodeResult {
+  code: string
+  filePath: string
+}
+
+export interface ExportReportResult {
+  filePath: string | null
+}
+
+// --- Boost Mode ---
+
+export interface BoostConfig {
+  gameId: string
+  /** Process names (no .exe needed) whose CPU priority drops to Idle while boosted. */
+  pauseProcessNames: string[]
+}
+
+export type BoostPhase = 'idle' | 'watching' | 'boosted'
+
+export interface BoostStatus {
+  enabled: boolean
+  phase: BoostPhase
+  gameId: string | null
+  gameName: string | null
+  detectedProcess: string | null
+  boostedSince: string | null
+  lastError: string | null
+}
+
+// --- Account (authenticates against the existing Render backend — no second backend) ---
+
+export interface AccountUser {
+  id: string
+  email?: string
+  name?: string | null
+  username?: string
+  role: 'customer' | 'staff'
+}
+
+export interface AccountSession {
+  token: string
+  user: AccountUser
+}
+
+export type TicketPlan = 'pc' | 'console' | 'both'
+export type TicketStatus = 'open' | 'claimed' | 'in_progress' | 'completed'
+
+export interface AccountTicket {
+  id: string
+  plan: TicketPlan
+  planLabel: string
+  price: number
+  status: TicketStatus
+  createdAt: string
+}
+
+export interface RequestCodeResult {
+  ok: boolean
+  message: string
+}

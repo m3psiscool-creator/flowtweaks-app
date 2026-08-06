@@ -1,6 +1,12 @@
 import { ipcMain } from 'electron'
 import { createRestorePoint, listRestorePoints } from '../restore/restorePoint'
-import { getSessions, revertEntry, revertSession, revertTweakInSession } from '../restore/changeLog'
+import {
+  getSessions,
+  revertAllSessions,
+  revertEntry,
+  revertSession,
+  revertTweakInSession
+} from '../restore/changeLog'
 
 export function registerRestoreIpcHandlers(): void {
   ipcMain.handle('restore:createPoint', (_event, description?: string) => createRestorePoint(description))
@@ -11,4 +17,5 @@ export function registerRestoreIpcHandlers(): void {
   ipcMain.handle('restore:revertTweakInSession', (_event, sessionId: string, tweakId: string) =>
     revertTweakInSession(sessionId, tweakId)
   )
+  ipcMain.handle('restore:revertAll', () => revertAllSessions())
 }
