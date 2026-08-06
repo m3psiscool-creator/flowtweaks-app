@@ -6,8 +6,6 @@ import { registerTweaksIpcHandlers } from './ipc/tweaks'
 import { registerRestoreIpcHandlers } from './ipc/restore'
 import { registerWheelIpcHandlers } from './ipc/wheel'
 import { registerDiagnosticsIpcHandlers } from './ipc/diagnostics'
-import { registerBoostIpcHandlers, attachBoostStatusPush } from './ipc/boost'
-import { stopBoost, getBoostStatus } from './boost/boostService'
 import { registerAccountIpcHandlers } from './ipc/account'
 import { registerStartupIpcHandlers } from './ipc/startup'
 import { relaunchElevatedIfNeeded } from './system/selfElevate'
@@ -42,7 +40,6 @@ function createWindow(): void {
   })
 
   startUsagePush(mainWindow)
-  attachBoostStatusPush(mainWindow)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -78,7 +75,6 @@ app.whenReady().then(async () => {
   registerRestoreIpcHandlers()
   registerWheelIpcHandlers()
   registerDiagnosticsIpcHandlers()
-  registerBoostIpcHandlers()
   registerAccountIpcHandlers()
   registerStartupIpcHandlers()
 
@@ -96,16 +92,4 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
-})
-
-// If Boost Mode is mid-boost when the app quits, its temporary tweaks and paused-process
-// priorities must not be left stuck — revert before the process actually exits.
-let quittingCleanly = false
-app.on('before-quit', (event) => {
-  if (quittingCleanly || getBoostStatus().phase !== 'boosted') return
-  event.preventDefault()
-  stopBoost().finally(() => {
-    quittingCleanly = true
-    app.quit()
-  })
 })

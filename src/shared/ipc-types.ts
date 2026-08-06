@@ -245,26 +245,6 @@ export interface ExportReportResult {
   filePath: string | null
 }
 
-// --- Boost Mode ---
-
-export interface BoostConfig {
-  gameId: string
-  /** Process names (no .exe needed) whose CPU priority drops to Idle while boosted. */
-  pauseProcessNames: string[]
-}
-
-export type BoostPhase = 'idle' | 'watching' | 'boosted'
-
-export interface BoostStatus {
-  enabled: boolean
-  phase: BoostPhase
-  gameId: string | null
-  gameName: string | null
-  detectedProcess: string | null
-  boostedSince: string | null
-  lastError: string | null
-}
-
 // --- Startup Programs (dynamic, per-machine — not part of the static tweak catalog) ---
 
 export type StartupSource = 'registry' | 'startupFolder'

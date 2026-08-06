@@ -10,8 +10,6 @@ import Diagnostics from '@renderer/pages/Diagnostics'
 import Account from '@renderer/pages/Account'
 import About from '@renderer/pages/About'
 
-// BoostMode.tsx still exists and works — it's just not routed here. See Sidebar.tsx's NAV_ITEMS
-// comment for why it was cut from the UI.
 const PAGES: Record<string, () => React.JSX.Element> = {
   home: Home,
   optimizations: Optimizations,

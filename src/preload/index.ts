@@ -5,8 +5,6 @@ import type {
   AccountTicket,
   ApplyOptions,
   ApplySessionResult,
-  BoostConfig,
-  BoostStatus,
   CreateRestorePointResult,
   DiagnosticReport,
   DisableSessionResult,
@@ -69,17 +67,6 @@ const api = {
     generateSupportCode: (): Promise<SupportCodeResult> =>
       ipcRenderer.invoke('diagnostics:generateSupportCode'),
     revealFile: (filePath: string): Promise<void> => ipcRenderer.invoke('diagnostics:revealFile', filePath)
-  },
-  boost: {
-    getStatus: (): Promise<BoostStatus> => ipcRenderer.invoke('boost:getStatus'),
-    start: (config: BoostConfig): Promise<BoostStatus> => ipcRenderer.invoke('boost:start', config),
-    stop: (): Promise<BoostStatus> => ipcRenderer.invoke('boost:stop'),
-    listRunningProcesses: (): Promise<string[]> => ipcRenderer.invoke('boost:listRunningProcesses'),
-    onStatus: (callback: (status: BoostStatus) => void): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, status: BoostStatus): void => callback(status)
-      ipcRenderer.on('boost:status', listener)
-      return () => ipcRenderer.removeListener('boost:status', listener)
-    }
   },
   startup: {
     getReport: (): Promise<StartupReport> => ipcRenderer.invoke('startup:getReport'),

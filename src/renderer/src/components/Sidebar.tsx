@@ -16,11 +16,6 @@ export interface NavItem {
   icon: (props: { className?: string }) => React.JSX.Element
 }
 
-// Boost Mode is deliberately not listed here — its code stays in the repo (see BoostMode.tsx),
-// but independent research showed the underlying mechanism (pausing background apps + a couple of
-// temp tweaks around game launch) delivers no measurable gain on the hardware this app targets.
-// Cut from the UI rather than kept as a feature that doesn't do what it implies. Revisit only on
-// real customer demand.
 export const NAV_ITEMS: NavItem[] = [
   { key: 'home', label: 'Home', icon: IconComputer },
   { key: 'optimizations', label: 'Optimizations', icon: IconBolt },
