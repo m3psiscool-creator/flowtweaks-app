@@ -4,6 +4,7 @@ import { evaluateCompatibility } from './compatibility'
 import { disableOperation } from './disableOperation'
 import { captureSnapshots } from '../restore/snapshot'
 import { appendPendingEntry, updateEntryOutcome } from '../restore/changeLog'
+import { withResolvedAmdTweak } from './gpu/amdRegistry'
 
 function snapshotMatchesDisabled(operation: Operation, snapshot: SnapshotValue | null): boolean {
   if (!snapshot || operation.type !== 'registry' || snapshot.kind !== 'registry') return false
@@ -29,18 +30,25 @@ function snapshotMatchesDisabled(operation: Operation, snapshot: SnapshotValue |
  * write went, only what was there immediately before it.
  */
 export async function disableTweak(
-  tweak: TweakDefinition,
+  inputTweak: TweakDefinition,
   specs: SystemSpecs,
   isElevated: boolean,
   sessionId: string,
   enabledTweakIds: Set<string>
 ): Promise<TweakDisableResult> {
+  // AMD tweaks have no static registry path — resolved to a concrete 'registry' operation here,
+  // once, before anything below ever looks at tweak.apply/detect.
+  const tweak = await withResolvedAmdTweak(inputTweak)
+
   const unsupportedOp = tweak.apply.find((op) => op.type !== 'registry')
   if (unsupportedOp) {
     return {
       tweakId: tweak.id,
       outcome: 'needs-manual-review',
-      detail: `Disabling "${unsupportedOp.type}" changes isn't built yet — this tweak can't be turned off by the app.`
+      detail:
+        unsupportedOp.type === 'amdDriverRegistry'
+          ? "Couldn't locate this PC's AMD GPU driver settings in the registry — try again as administrator."
+          : `Disabling "${unsupportedOp.type}" changes isn't built yet — this tweak can't be turned off by the app.`
     }
   }
 

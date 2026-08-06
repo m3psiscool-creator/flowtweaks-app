@@ -119,6 +119,24 @@ export type Operation =
       stopIfRunning: boolean
     }
   | {
+      /**
+       * An AMD GPU driver registry value (Radeon Chill/Boost/Anti-Lag/ULPS). No hive/path — unlike
+       * every other registry op, this one has no static location. AMD driver settings live under
+       * HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}\NNNN, where NNNN is a per-machine,
+       * per-install subkey index assigned by Windows at driver install time, and a system with both
+       * an integrated and discrete AMD GPU has TWO independent copies of these values (confirmed on
+       * real hardware during development — the resolver picks the discrete adapter). Resolved to a
+       * concrete 'registry' operation at scan/apply/disable time by
+       * src/main/tweaks/gpu/amdRegistry.ts, before it ever reaches the generic snapshot/apply/revert
+       * pipeline — every other part of the app only ever sees the resolved form.
+       */
+      type: 'amdDriverRegistry'
+      valueName: string
+      valueType: 'REG_DWORD' | 'REG_SZ' | 'REG_BINARY'
+      desiredValue: string | number
+      disabledValue: string | number
+    }
+  | {
       type: 'powerPlan'
       sourceGuid: string
       planName: string

@@ -9,7 +9,11 @@
 // dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline; sfc-scan/disk-cleanup/
 // disable-usb-selective-suspend/optimize-drives-retrim are externalTool; disable-sysmain/
 // disable-webclient/disable-imaging-service/disable-telephony are services; clear-temp-files is
-// fileCleanup — none of those operation types are supported by applyOperation.ts yet.
+// fileCleanup — none of those operation types are supported by applyOperation.ts yet. The four
+// amd-* tweaks are amdDriverRegistry, resolved to a concrete registry op by
+// src/main/tweaks/gpu/amdRegistry.ts before apply/disable ever see them — verified end-to-end on
+// real AMD hardware (elevated apply + disable round trip, ground-truthed against the actual
+// registry value both ways) before being added here.
 export const APPLY_ENABLED_TWEAK_IDS = new Set([
   'dark-mode',
   'game-mode',
@@ -38,7 +42,11 @@ export const APPLY_ENABLED_TWEAK_IDS = new Set([
   'disable-suggestions-spotlight',
   'suppress-security-notifications',
   'defer-feature-updates',
-  'disable-window-animations'
+  'disable-window-animations',
+  'amd-disable-radeon-chill',
+  'amd-enable-radeon-boost',
+  'amd-enable-anti-lag',
+  'amd-disable-ulps'
 ])
 
 // disableTweak.ts only implements the registry operation type (same scope as applyOperation.ts),

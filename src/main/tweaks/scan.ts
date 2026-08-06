@@ -6,6 +6,7 @@ import { buildScanScript, collectDetectableOperations, keyFor } from './psScan'
 import { evaluateOperation, type OpDetectResult } from './evaluateOperation'
 import { evaluateCompatibility } from './compatibility'
 import { evaluateDnsScanState } from './dns/dnsScanState'
+import { withResolvedAmdTweaks } from './gpu/amdRegistry'
 
 function aggregateState(opResults: OpDetectResult[]): TweakCurrentState {
   if (opResults.length === 0) return 'unknown'
@@ -32,7 +33,10 @@ async function runBatchScan(registryLikeTweaks: TweakDefinition[]) {
 
 export async function runScan(specs: SystemSpecs): Promise<ScanReport> {
   const dnsTweaks = ALL_TWEAKS.filter((t) => t.apply.some((op) => op.type === 'networkDns'))
-  const registryLikeTweaks = ALL_TWEAKS.filter((t) => !dnsTweaks.includes(t))
+  const unresolvedRegistryLikeTweaks = ALL_TWEAKS.filter((t) => !dnsTweaks.includes(t))
+  // AMD tweaks have no static registry path — resolved to this machine's actual AMD adapter
+  // subkey once here, same as every other registry-like tweak's scan pass.
+  const registryLikeTweaks = await withResolvedAmdTweaks(unresolvedRegistryLikeTweaks)
 
   // DNS's own dedicated, adapter-aware evaluation (see src/main/tweaks/dns/) is fully independent
   // of the batched registry/service/powerPlan scan script — run both concurrently.

@@ -5,6 +5,7 @@ import { applyOperation } from './applyOperation'
 import { captureSnapshots } from '../restore/snapshot'
 import { appendPendingEntry, updateEntryOutcome } from '../restore/changeLog'
 import { applyDnsCloudflareTweak } from './dns/applyDnsTweak'
+import { withResolvedAmdTweak } from './gpu/amdRegistry'
 
 function snapshotMatchesDesired(operation: Operation, snapshot: SnapshotValue | null): boolean {
   if (!snapshot || operation.type !== 'registry' || snapshot.kind !== 'registry') return false
@@ -26,7 +27,7 @@ function snapshotMatchesDesired(operation: Operation, snapshot: SnapshotValue | 
  * change and every failure.
  */
 export async function applyTweak(
-  tweak: TweakDefinition,
+  inputTweak: TweakDefinition,
   specs: SystemSpecs,
   isElevated: boolean,
   sessionId: string,
@@ -35,16 +36,23 @@ export async function applyTweak(
 ): Promise<TweakApplyResult> {
   // Network tweaks have their own pipeline (adapter selection, dynamic compatibility, connectivity
   // verification with auto-revert) — they don't go through the generic registry-write loop at all.
-  if (tweak.apply.some((op) => op.type === 'networkDns')) {
-    return applyDnsCloudflareTweak(tweak, sessionId, allowDnsOverride)
+  if (inputTweak.apply.some((op) => op.type === 'networkDns')) {
+    return applyDnsCloudflareTweak(inputTweak, sessionId, allowDnsOverride)
   }
+
+  // AMD tweaks have no static registry path — resolved to a concrete 'registry' operation here,
+  // once, before anything below ever looks at tweak.apply/detect.
+  const tweak = await withResolvedAmdTweak(inputTweak)
 
   const unsupportedOp = tweak.apply.find((op) => op.type !== 'registry')
   if (unsupportedOp) {
     return {
       tweakId: tweak.id,
       outcome: 'needs-manual-review',
-      detail: `Applying "${unsupportedOp.type}" changes isn't built yet — this tweak can't be applied by the app.`
+      detail:
+        unsupportedOp.type === 'amdDriverRegistry'
+          ? "Couldn't locate this PC's AMD GPU driver settings in the registry — try again as administrator."
+          : `Applying "${unsupportedOp.type}" changes isn't built yet — this tweak can't be applied by the app.`
     }
   }
 
