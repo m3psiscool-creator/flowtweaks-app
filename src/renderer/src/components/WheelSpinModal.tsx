@@ -75,12 +75,19 @@ export default function WheelSpinModal({ onClose, onWon, onSpin }: WheelSpinModa
             }}
           >
             {SEGMENTS.map((seg, i) => {
+              // Positioned by trig, not rotate+translate — a rotated label reads upside-down past
+              // 90°/270°, and the wheel's own rotation (on the parent) already spins these labels
+              // along with their segments, so they only need to sit at the right point, upright.
               const angle = i * SEGMENT_DEG + SEGMENT_DEG / 2
+              const radians = (angle * Math.PI) / 180
+              const radius = 78 // px from center — mid-way into each wedge, well clear of the rim
+              const x = radius * Math.sin(radians)
+              const y = -radius * Math.cos(radians)
               return (
                 <div
                   key={seg.id}
-                  className="absolute left-1/2 top-1/2 w-24 origin-left text-[10px] font-semibold text-white"
-                  style={{ transform: `rotate(${angle}deg) translateX(4px)` }}
+                  className="absolute w-20 -translate-x-1/2 -translate-y-1/2 text-center text-[10px] font-semibold text-white"
+                  style={{ left: `calc(50% + ${x}px)`, top: `calc(50% + ${y}px)` }}
                 >
                   {seg.label}
                 </div>
