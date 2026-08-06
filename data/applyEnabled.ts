@@ -6,9 +6,10 @@
 // elevation check (needs-manual-review, not a crash) per CLAUDE.md's hard rule on graceful
 // elevation handling. disable-memory-integrity is deliberately excluded — it's a security feature
 // (Core Isolation) and high risk, pending a dedicated extra-confirmation UX before it's enabled.
-// dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline; sfc-scan/disk-cleanup are
-// externalTool, disable-sysmain is a service, clear-temp-files is fileCleanup — none of those
-// operation types are supported by applyOperation.ts yet.
+// dns-cloudflare has its own dedicated apply/verify/auto-revert pipeline; sfc-scan/disk-cleanup/
+// disable-usb-selective-suspend/optimize-drives-retrim are externalTool; disable-sysmain/
+// disable-webclient/disable-imaging-service/disable-telephony are services; clear-temp-files is
+// fileCleanup — none of those operation types are supported by applyOperation.ts yet.
 export const APPLY_ENABLED_TWEAK_IDS = new Set([
   'dark-mode',
   'game-mode',
@@ -17,7 +18,27 @@ export const APPLY_ENABLED_TWEAK_IDS = new Set([
   'hags',
   'disable-fast-startup',
   'visual-effects',
-  'dns-cloudflare'
+  'dns-cloudflare',
+  'disable-hibernation',
+  'disable-mouse-acceleration',
+  'disable-accessibility-shortcuts',
+  'enable-ssd-trim',
+  'delivery-optimization-http-only',
+  'disable-mixed-reality',
+  'deny-nearby-sharing',
+  'disable-sensors',
+  'disable-location',
+  'disable-voice-activation',
+  'disable-input-personalization',
+  'reduce-telemetry',
+  'disable-feedback-prompts',
+  'disable-experimentation',
+  'disable-settings-sync',
+  'disable-bing-search',
+  'disable-suggestions-spotlight',
+  'suppress-security-notifications',
+  'defer-feature-updates',
+  'disable-window-animations'
 ])
 
 // disableTweak.ts only implements the registry operation type (same scope as applyOperation.ts),

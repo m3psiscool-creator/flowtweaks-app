@@ -13,13 +13,41 @@ function detectGpuVendors(vendorStrings: string[]): GpuVendor[] {
   return [...vendors]
 }
 
+// Only the DMTF SMBIOS chassis types that are unambiguously mains-powered desktop enclosures.
+// Deliberately excludes "All in One" and "Docking Station" too — some AIOs ship a battery backup
+// for graceful shutdown, and a docked device is still fundamentally a laptop. Battery presence
+// alone was considered and rejected for this check: a desktop with a UPS attached can report a
+// battery over ACPI, and some handhelds don't report one reliably either — chassis type is the
+// more direct signal for "can this machine safely lose Fast Startup/hibernation."
+const DESKTOP_CHASSIS_TYPES = new Set([
+  'Desktop',
+  'Low Profile Desktop',
+  'Pizza Box',
+  'Mini Tower',
+  'Tower',
+  'Space-Saving',
+  'Lunch Box',
+  'Main System Chassis',
+  'Rack Mount Chassis',
+  'Sealed-Case PC',
+  'Mini PC',
+  'Stick PC'
+])
+
+function classifyChassisType(rawType: string): SystemSpecs['chassisType'] {
+  if (DESKTOP_CHASSIS_TYPES.has(rawType)) return 'desktop'
+  if (!rawType || rawType === 'Other' || rawType === 'Unknown') return 'unknown'
+  return 'portable'
+}
+
 export async function getSystemSpecs(): Promise<SystemSpecs> {
-  const [osInfo, cpu, graphics, mem, fsSize] = await Promise.all([
+  const [osInfo, cpu, graphics, mem, fsSize, chassis] = await Promise.all([
     si.osInfo(),
     si.cpu(),
     si.graphics(),
     si.mem(),
-    si.fsSize()
+    si.fsSize(),
+    si.chassis()
   ])
 
   const gpuModel =
@@ -41,6 +69,7 @@ export async function getSystemSpecs(): Promise<SystemSpecs> {
     cpuThreads: cpu.cores,
     gpuModel,
     gpuVendors,
+    chassisType: classifyChassisType(chassis.type),
     ramTotalBytes: mem.total,
     disks: fsSize
       .filter((d) => d.mount && d.size > 0)

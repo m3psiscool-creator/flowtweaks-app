@@ -22,6 +22,8 @@ export interface SystemSpecs {
   cpuThreads: number
   gpuModel: string
   gpuVendors: GpuVendor[]
+  /** 'unknown' when the chassis type can't be confidently read — treated as "not desktop" by compatibility checks. */
+  chassisType: 'desktop' | 'portable' | 'unknown'
   ramTotalBytes: number
   disks: DiskInfo[]
 }

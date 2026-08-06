@@ -28,6 +28,13 @@ export function evaluateCompatibility(
     }
   }
 
+  if (rule.desktopOnly && specs.chassisType !== 'desktop') {
+    return {
+      compatible: false,
+      reason: 'Only offered on desktop PCs — this looks like a laptop or portable device that may run off battery.'
+    }
+  }
+
   if (rule.excludes && rule.excludes.length > 0) {
     const conflict = rule.excludes.find((id) => enabledTweakIds.has(id))
     if (conflict) {

@@ -211,6 +211,86 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
     apply: visualEffectsRegistryOps
   },
   {
+    id: 'disable-hibernation',
+    name: 'Disable Hibernation',
+    category: 'windows-performance',
+    whatItChanges: 'Turns off Windows Hibernation, removing it from the power menu.',
+    whyItMayHelp:
+      'Hibernation keeps a large reserved hiberfil.sys on your boot drive and adds a background task most desktop players never use — freeing that reservation up needs a follow-up "powercfg /hibernate off" run outside Flow Tweaks for now, this just disables the feature itself.',
+    riskLevel: 'low',
+    fpsImpact: 'none',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: true,
+    // Desktop-only — a laptop, handheld, or anything that can lose power needs hibernation as a
+    // real sleep-state fallback. Gated on actual chassis type, not battery presence: a desktop with
+    // a UPS can report a battery over ACPI, so battery alone isn't a safe enough signal here.
+    compatibility: { desktopOnly: true },
+    detect: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SYSTEM\\CurrentControlSet\\Control\\Power',
+        valueName: 'HibernateEnabled',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ],
+    apply: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SYSTEM\\CurrentControlSet\\Control\\Power',
+        valueName: 'HibernateEnabled',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ]
+  },
+  {
+    id: 'disable-usb-selective-suspend',
+    name: 'Disable USB Selective Suspend',
+    category: 'windows-performance',
+    whatItChanges:
+      'Turns off USB Selective Suspend (covers root-hub idle power-down too) on both the plugged-in and battery power profiles, so USB devices are never told to idle down to save power.',
+    whyItMayHelp:
+      'A wired mouse or keyboard waking from a suspended USB hub adds a small, inconsistent delay right when you move — this removes that source of micro-stutter entirely.',
+    riskLevel: 'low',
+    fpsImpact: 'low',
+    requiresAdmin: true,
+    requiresRestart: false,
+    // externalTool operations have no snapshot/previous-value model — see schema.ts's Operation
+    // doc comment. powercfg's own scheme-current alias means this doesn't need the per-machine
+    // dynamic subkey resolution the AMD GPU tweaks do, but applying externalTool operations isn't
+    // built into the apply pipeline yet (same as sfc-scan/disk-cleanup below) — informational only
+    // for now, see data/applyEnabled.ts.
+    reversible: false,
+    compatibility: {},
+    detect: [],
+    apply: [
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setacvalueindex', 'scheme_current', '2a737441-1930-4402-8d77-b2bebba308a3', '48e6b7a6-50f5-4782-a5d4-53bb8f07e226', '0'],
+        interactive: false
+      },
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setdcvalueindex', 'scheme_current', '2a737441-1930-4402-8d77-b2bebba308a3', '48e6b7a6-50f5-4782-a5d4-53bb8f07e226', '0'],
+        interactive: false
+      },
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setactive', 'scheme_current'],
+        interactive: false
+      }
+    ]
+  },
+  {
     id: 'sfc-scan',
     name: 'System File Checker Scan',
     category: 'windows-performance',

@@ -6,6 +6,8 @@ import { networkTweaks } from './network'
 import { backgroundProcessesTweaks } from './background-processes'
 import { storageCleanupTweaks } from './storage-cleanup'
 import { personalizationTweaks } from './personalization'
+import { inputTweaks } from './input'
+import { privacyNoiseTweaks } from './privacy-noise'
 
 export const ALL_TWEAKS: TweakDefinition[] = [
   ...fpsLatencyTweaks,
@@ -14,7 +16,9 @@ export const ALL_TWEAKS: TweakDefinition[] = [
   ...networkTweaks,
   ...backgroundProcessesTweaks,
   ...storageCleanupTweaks,
-  ...personalizationTweaks
+  ...personalizationTweaks,
+  ...inputTweaks,
+  ...privacyNoiseTweaks
 ]
 
 export function getTweakById(id: string): TweakDefinition | undefined {

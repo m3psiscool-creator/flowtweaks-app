@@ -31,7 +31,16 @@ export interface GameProfile {
   tweakIds: string[]
 }
 
-const COMPETITIVE_BUNDLE = ['game-mode', 'fullscreen-optimizations', 'scheduling-registry-tweaks', 'hags', 'dns-cloudflare']
+const COMPETITIVE_BUNDLE = [
+  'game-mode',
+  'fullscreen-optimizations',
+  'scheduling-registry-tweaks',
+  'hags',
+  'dns-cloudflare',
+  'disable-mouse-acceleration',
+  'disable-accessibility-shortcuts',
+  'disable-hibernation'
+]
 
 export const GAME_PROFILES: GameProfile[] = [
   {
@@ -75,20 +84,27 @@ export const GAME_PROFILES: GameProfile[] = [
     name: 'General Gaming',
     description: 'A safe, broadly useful set for anything you play casually.',
     categoryWeights: { 'fps-latency': 1.2, gpu: 1.0 },
-    tweakIds: ['game-mode', 'fullscreen-optimizations', 'scheduling-registry-tweaks', 'hags']
+    tweakIds: ['game-mode', 'fullscreen-optimizations', 'scheduling-registry-tweaks', 'hags', 'disable-mouse-acceleration']
   },
   {
     id: 'streaming-gaming',
     name: 'Streaming & Gaming',
     description: 'Leaves more headroom for OBS/encoder load alongside the game.',
     categoryWeights: { 'windows-performance': 1.4, 'background-processes': 1.5, 'fps-latency': 0.8 },
-    tweakIds: ['disable-fast-startup', 'visual-effects', 'game-mode']
+    tweakIds: [
+      'disable-fast-startup',
+      'visual-effects',
+      'game-mode',
+      'disable-hibernation',
+      'delivery-optimization-http-only',
+      'disable-suggestions-spotlight'
+    ]
   },
   {
     id: 'low-end-pc',
     name: 'Low-End Computer',
     description: 'Trims overhead for older or budget hardware.',
     categoryWeights: { 'windows-performance': 1.6, 'background-processes': 1.6, gpu: 1.3, 'storage-cleanup': 1.2 },
-    tweakIds: ['disable-fast-startup', 'visual-effects', 'hags']
+    tweakIds: ['disable-fast-startup', 'visual-effects', 'hags', 'enable-ssd-trim', 'disable-hibernation']
   }
 ]

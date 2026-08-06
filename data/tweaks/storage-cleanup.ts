@@ -54,6 +54,66 @@ export const storageCleanupTweaks: TweakDefinition[] = [
     ]
   },
   {
+    id: 'enable-ssd-trim',
+    name: 'Enable SSD TRIM',
+    category: 'storage-cleanup',
+    whatItChanges: 'Makes sure Windows sends TRIM notifications to your drive when files are deleted, so the SSD knows which blocks are actually free.',
+    whyItMayHelp: 'Without TRIM, a drive can\'t reclaim deleted blocks ahead of time, which shows up as slower writes as it fills up — this is normally already on by default, this just confirms and corrects it if something turned it off.',
+    riskLevel: 'low',
+    fpsImpact: 'none',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: true,
+    compatibility: {},
+    // Same registry value fsutil behavior set DisableDeleteNotify reads/writes — 0 = TRIM
+    // notifications on (the Windows default on virtually every modern install), 1 = off.
+    detect: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SYSTEM\\CurrentControlSet\\Control\\FileSystem',
+        valueName: 'DisableDeleteNotify',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ],
+    apply: [
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SYSTEM\\CurrentControlSet\\Control\\FileSystem',
+        valueName: 'DisableDeleteNotify',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ]
+  },
+  {
+    id: 'optimize-drives-retrim',
+    name: 'Optimize Drives (Retrim)',
+    category: 'storage-cleanup',
+    whatItChanges: 'Runs Windows\' Optimize Drives in retrim-only mode (defrag /L) across every drive — the SSD-safe pass, never a traditional block-shuffling defrag.',
+    whyItMayHelp: 'This is the same maintenance pass Windows\' own weekly Optimize Drives schedule runs — doing it on demand catches a drive up immediately instead of waiting for the next scheduled run.',
+    riskLevel: 'low',
+    fpsImpact: 'none',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: false,
+    compatibility: {},
+    detect: [],
+    apply: [
+      {
+        type: 'externalTool',
+        command: 'defrag.exe',
+        // /C = every drive, /L = retrim only (SSD-safe) — never a full defrag pass.
+        args: ['/C', '/L'],
+        interactive: true
+      }
+    ]
+  },
+  {
     id: 'disk-cleanup',
     name: 'Disk Cleanup',
     category: 'storage-cleanup',

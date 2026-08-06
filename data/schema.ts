@@ -69,6 +69,12 @@ export interface CompatibilityRule {
   minWindowsBuild?: number
   /** Restrict to specific GPU vendors, e.g. HAGS only makes sense with a dGPU. */
   gpuVendor?: ('nvidia' | 'amd' | 'intel')[]
+  /**
+   * Restrict to a real, unambiguous desktop chassis (see systemInfo.ts's classifyChassisType) —
+   * used for tweaks like disabling hibernation that are unsafe to offer on anything that might run
+   * off battery. 'unknown' chassis readings are treated as NOT desktop, never assumed safe.
+   */
+  desktopOnly?: boolean
   /** IDs of other tweaks that conflict with this one and must not both be applied. */
   excludes?: string[]
 }
