@@ -107,17 +107,23 @@ h3,
   transform: translateY(0);
 }
 
-/* --- Liquid glass panel system — everywhere except the Optimizations tab, which keeps its
-   existing flat-card structure by design. Frosted translucency + rounded edges + layered
-   shadow + a light rim on the top edge, matching Apple's Liquid Glass material language
-   (translucency, refraction/depth, content stays on a readable layer — text never sits
-   directly on raw glass with no backing). */
+/* --- Liquid glass panel system, used on every page including Optimizations. Frosted
+   translucency + rounded edges + layered shadow + a light rim on the top edge, matching Apple's
+   Liquid Glass material language (translucency, refraction/depth, content stays on a readable
+   layer — text never sits directly on raw glass with no backing). */
 .ft-glass {
   position: relative;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 65%);
+  /* background-image, not the `background` shorthand — the shorthand resets background-color too,
+     which (since this rule is compiled after Tailwind's utilities) would silently override any
+     bg-* utility applied alongside it, like the selected-state orange tint on a tweak card. */
+  background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 65%);
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  /* Longhand, same reason as background-image above — lets a Tailwind border-* color utility
+     override just the color without needing !important. */
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.12);
   border-radius: 20px;
   box-shadow:
     0 20px 50px -24px rgba(0, 0, 0, 0.65),
@@ -129,10 +135,12 @@ h3,
    small text stays comfortably readable over the ambient background blobs. */
 .ft-glass-solid {
   position: relative;
-  background: linear-gradient(155deg, rgba(20, 20, 20, 0.92), rgba(13, 13, 13, 0.88) 65%);
+  background-image: linear-gradient(155deg, rgba(20, 20, 20, 0.92), rgba(13, 13, 13, 0.88) 65%);
   backdrop-filter: blur(24px) saturate(130%);
   -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   box-shadow:
     0 20px 50px -24px rgba(0, 0, 0, 0.65),
@@ -152,4 +160,23 @@ h3,
     0 24px 60px -20px rgba(0, 0, 0, 0.7),
     0 0 32px -10px rgba(255, 85, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Tweak cards specifically: dozens of these render at once on Optimizations, and every one
+   glowing orange on hover reads as "the whole page is orange." Orange is reserved for the one
+   state that's actually special — selected — so hover here lifts and brightens without any
+   brand color; each card's constant identity comes from its category-color accent bar instead. */
+.ft-glass-hover-neutral {
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.ft-glass-hover-neutral:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.7),
+    0 0 28px -12px rgba(255, 255, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }

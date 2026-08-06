@@ -1,4 +1,4 @@
-import type { TweakDefinition } from '@data/schema'
+import { CATEGORY_COLORS, type TweakDefinition } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import Pill from './Pill'
 import { RISK_CLASSES, RISK_LABELS, STATE_CLASSES, STATE_LABELS } from '@renderer/lib/tweakDisplay'
@@ -38,6 +38,7 @@ export default function TweakScanCard({
   const alreadyEnabled = result?.currentState === 'already-enabled'
   const canSelect = !!selection && compatible && !result?.needsElevation && !alreadyEnabled
   const selected = !!selection?.selected
+  const categoryColor = CATEGORY_COLORS[tweak.category]
 
   return (
     <div
@@ -52,10 +53,13 @@ export default function TweakScanCard({
           selection!.onToggle()
         }
       }}
-      className={`rounded-lg border p-4 transition-all duration-150 ${
+      style={{ borderLeft: `3px solid ${selected ? '#ff5500' : categoryColor}` }}
+      className={`ft-glass p-4 ${
         selected
-          ? 'border-ft-orange bg-ft-orange/10 shadow-[0_0_20px_-6px_rgba(255,85,0,0.45)]'
-          : `border-white/10 bg-white/5 ${canSelect ? 'ft-hoverable' : 'ft-hoverable-subtle'}`
+          ? 'bg-ft-orange/8 shadow-[0_0_24px_-10px_rgba(255,85,0,0.5)]'
+          : canSelect
+            ? 'ft-glass-hover-neutral'
+            : 'ft-hoverable-subtle'
       } ${compatible ? '' : 'opacity-50'} ${canSelect ? 'cursor-pointer' : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -68,13 +72,13 @@ export default function TweakScanCard({
           )}
           <Pill label={RISK_LABELS[tweak.riskLevel]} className={RISK_CLASSES[tweak.riskLevel]} />
           {result?.needsElevation && (
-            <Pill label="Needs Admin" className="bg-orange-500/15 text-ft-orange" />
+            <Pill label="Needs Admin" className="bg-status-warning/15 text-status-warning" />
           )}
           {!compatible && !override?.confirmed && (
-            <Pill label="Incompatible" className="bg-red-500/15 text-red-400" />
+            <Pill label="Incompatible" className="bg-status-critical/15 text-status-critical" />
           )}
           {override?.confirmed && (
-            <Pill label="Override confirmed" className="bg-ft-orange/15 text-ft-orange" />
+            <Pill label="Override confirmed" className="bg-status-warning/15 text-status-warning" />
           )}
           {locked && <Pill label="Locked" className="bg-white/10 text-white/50" />}
           {freeUnlock && <Pill label="Free Unlock" className="bg-ft-orange/15 text-ft-orange" />}
@@ -85,7 +89,7 @@ export default function TweakScanCard({
       <p className="mt-1 text-sm text-white/40">{tweak.whyItMayHelp}</p>
 
       {!compatible && result?.incompatibilityReason && !override?.confirmed && (
-        <p className="mt-2 text-sm text-red-400">{result.incompatibilityReason}</p>
+        <p className="mt-2 text-sm text-status-critical">{result.incompatibilityReason}</p>
       )}
 
       {override && !override.confirmed && (

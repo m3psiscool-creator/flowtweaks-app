@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ALL_TWEAKS } from '@data/tweaks'
 import { APPLY_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
-import { CATEGORY_LABELS, type Category } from '@data/schema'
+import { CATEGORY_COLORS, CATEGORY_LABELS, type Category } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
@@ -130,10 +130,10 @@ export default function Optimizations(): React.JSX.Element {
         </div>
       </div>
 
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-4 text-sm text-status-critical">{error}</p>}
 
       {report && !report.isElevated && (
-        <p className="mt-4 rounded border border-ft-orange/30 bg-ft-orange/10 p-3 text-sm text-ft-orange">
+        <p className="ft-glass mt-4 border-status-warning/30 p-3 text-sm text-status-warning">
           Not running as administrator — tweaks marked &quot;Needs Admin&quot; can be scanned but
           won&apos;t be applicable until Flow Tweaks is relaunched elevated.
         </p>
@@ -144,7 +144,7 @@ export default function Optimizations(): React.JSX.Element {
           {result.restorePointCreated ? (
             <ResultsReport results={result.results} />
           ) : (
-            <p className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            <p className="ft-glass border-status-critical/30 p-3 text-sm text-status-critical">
               Nothing was applied — couldn&apos;t create a restore point first. {result.restorePointError}
             </p>
           )}
@@ -176,7 +176,13 @@ export default function Optimizations(): React.JSX.Element {
         {report &&
           categories.map(({ category, tweaks }) => (
             <section key={category}>
-              <h2 className="ft-heading mb-3 text-xl text-white/80">{CATEGORY_LABELS[category]}</h2>
+              <h2 className="ft-heading mb-3 flex items-center gap-2 text-xl text-white/80">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: CATEGORY_COLORS[category] }}
+                />
+                {CATEGORY_LABELS[category]}
+              </h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {tweaks.map((tweak) => {
                   const applyEnabled = APPLY_ENABLED_TWEAK_IDS.has(tweak.id)

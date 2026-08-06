@@ -4,13 +4,19 @@ import { GAME_PROFILES } from '@data/gameProfiles'
 import { CATEGORY_COLORS, type FpsImpact } from '@data/schema'
 import { useScan } from '@renderer/hooks/useScan'
 import Gauge from '@renderer/components/Gauge'
+import GlassSelect from '@renderer/components/GlassSelect'
 import { IconGamepad, IconBolt } from '@renderer/components/icons'
 
 const IMPACT_SCORE: Record<FpsImpact, number> = { none: 0, low: 1, medium: 2, high: 3 }
-const EMPHASIZE_MULTIPLIER = 1.5
-// Scores above this are treated as "maxed out" for the gauge — the number itself is unbounded
-// (more relevant tweaks = higher score), but the dial only needs to communicate "how full."
-const GAUGE_MAX_SCORE = 14
+// A shared ceiling across every profile, not a per-profile-normalized percentage. Normalizing by
+// each profile's own theoretical max was tried first and mathematically backfired — since both
+// the score and the ceiling scale with the same weights, the ratio stays roughly constant across
+// profiles regardless of which game is selected, erasing exactly the differentiation this page
+// needs. A shared absolute scale means a game that weights the currently-unapplied tweaks'
+// categories more heavily genuinely shows a higher score than one that doesn't — verified against
+// this app's real 14-tweak set: Valorant's fps-latency weight (2.0) vs Call of Duty's (1.6) on the
+// same unapplied tweaks produces a real, visible tier difference, not just a different number.
+const GAUGE_MAX_SCORE = 20
 
 interface Tier {
   label: string
@@ -25,9 +31,9 @@ interface Tier {
  */
 function tierFor(score: number): Tier {
   if (score <= 0) return { label: 'Already optimized', range: 'No further predicted gain from these tweaks', colorVar: 'var(--color-status-good)' }
-  if (score <= 2) return { label: 'Low potential improvement', range: 'roughly 0–5%', colorVar: 'rgba(255,255,255,0.6)' }
-  if (score <= 5) return { label: 'Moderate potential improvement', range: 'roughly 5–15%', colorVar: 'var(--color-status-warning)' }
-  if (score <= 8) return { label: 'High potential improvement', range: 'roughly 15–25%', colorVar: 'var(--color-status-serious)' }
+  if (score <= 4) return { label: 'Low potential improvement', range: 'roughly 0–5%', colorVar: 'rgba(255,255,255,0.6)' }
+  if (score <= 9) return { label: 'Moderate potential improvement', range: 'roughly 5–15%', colorVar: 'var(--color-status-warning)' }
+  if (score <= 14) return { label: 'High potential improvement', range: 'roughly 15–25%', colorVar: 'var(--color-status-serious)' }
   return { label: 'Very high potential improvement', range: 'roughly 25%+', colorVar: 'var(--color-status-critical)' }
 }
 
@@ -54,11 +60,10 @@ export default function FpsEstimator(): React.JSX.Element {
       return !r || r.currentState !== 'already-enabled'
     })
 
-    let total = 0
-    for (const tweak of notYetApplied) {
-      const base = IMPACT_SCORE[tweak.fpsImpact]
-      total += profile.emphasize.includes(tweak.category) ? base * EMPHASIZE_MULTIPLIER : base
-    }
+    const total = notYetApplied.reduce(
+      (sum, t) => sum + IMPACT_SCORE[t.fpsImpact] * (profile.categoryWeights[t.category] ?? 1),
+      0
+    )
 
     return {
       score: total,
@@ -81,21 +86,12 @@ export default function FpsEstimator(): React.JSX.Element {
 
       <div className="ft-glass mt-6 flex flex-wrap items-center gap-3 p-4">
         <IconGamepad className="h-5 w-5 text-ft-orange/70" />
-        <label htmlFor="game-mode" className="text-sm text-white/50">
-          Game mode
-        </label>
-        <select
-          id="game-mode"
+        <span className="text-sm text-white/50">Game mode</span>
+        <GlassSelect
           value={profileId}
-          onChange={(e) => setProfileId(e.target.value)}
-          className="rounded border border-white/15 bg-black/40 px-3 py-1.5 text-sm text-white"
-        >
-          {GAME_PROFILES.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+          onChange={setProfileId}
+          options={GAME_PROFILES.map((p) => ({ value: p.id, label: p.name }))}
+        />
         <button
           type="button"
           onClick={runScan}
@@ -105,6 +101,8 @@ export default function FpsEstimator(): React.JSX.Element {
           {scanning ? 'Scanning…' : report ? 'Rescan' : 'Scan This PC'}
         </button>
       </div>
+
+      <p className="mt-2 text-xs text-white/30">{profile.description}</p>
 
       {!report && !scanning && (
         <p className="mt-6 text-sm text-white/40">Scan this PC to see an estimate.</p>
@@ -149,9 +147,10 @@ export default function FpsEstimator(): React.JSX.Element {
           )}
 
           <p className="mt-4 border-t border-white/10 pt-3 text-xs text-white/30">
-            This estimate is a relative guide based on which tweaks are still available on this
-            PC — it is not measured, benchmarked, or guaranteed. Head to Optimizations to actually
-            apply anything listed here.
+            This estimate weighs each tweak by how much it typically matters for{' '}
+            {profile.name.toLowerCase()}&apos;s specific CPU/GPU/network bottleneck — it is a
+            relative guide, not a measured benchmark. Head to Optimizations to actually apply
+            anything listed here.
           </p>
         </div>
       )}
