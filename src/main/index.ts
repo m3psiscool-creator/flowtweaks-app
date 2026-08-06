@@ -21,6 +21,15 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0d0d0d',
+    // Windows' default title bar is light/system-themed and clashes with the app's black brand —
+    // titleBarOverlay keeps the native minimize/maximize/close buttons (unlike frame: false, which
+    // would mean building and maintaining custom window controls) but recolors the bar itself.
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#0d0d0d',
+      symbolColor: '#ffffff',
+      height: 32
+    },
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false

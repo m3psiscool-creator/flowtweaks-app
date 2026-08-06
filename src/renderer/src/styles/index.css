@@ -15,6 +15,13 @@ body {
   font-family: 'Orbitron', sans-serif;
 }
 
+/* Electron renders Chromium's default scrollbar (light gray, OS-styled) — visibly clashes with
+   the black panel. Scrolling itself (wheel, trackpad, keyboard) is unaffected either way. */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 h1,
 h2,
 h3,
