@@ -150,9 +150,10 @@ export const fpsLatencyTweaks: TweakDefinition[] = [
     name: 'Disable Fullscreen Optimizations',
     category: 'fps-latency',
     whatItChanges: 'Turns off Windows Fullscreen Optimizations so games run in true exclusive fullscreen when they request it.',
-    whyItMayHelp: 'True exclusive fullscreen can reduce input latency compared to the borderless-style compositor Windows substitutes by default.',
+    whyItMayHelp:
+      "Microsoft's own data shows FSO performs about as well as exclusive fullscreen for most people on modern titles — this mainly helps older DX9/DX11 games. Harmless to leave on, worth trying if a specific game feels laggy in fullscreen.",
     riskLevel: 'low',
-    fpsImpact: 'medium',
+    fpsImpact: 'low',
     requiresAdmin: false,
     requiresRestart: false,
     reversible: true,

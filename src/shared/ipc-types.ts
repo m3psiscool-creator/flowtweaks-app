@@ -22,6 +22,8 @@ export interface SystemSpecs {
   cpuThreads: number
   gpuModel: string
   gpuVendors: GpuVendor[]
+  /** Number of GPU controllers Windows reports — used to gate multi-GPU-only tweaks like ULPS. */
+  gpuCount: number
   /** 'unknown' when the chassis type can't be confidently read — treated as "not desktop" by compatibility checks. */
   chassisType: 'desktop' | 'portable' | 'unknown'
   ramTotalBytes: number
@@ -243,6 +245,16 @@ export interface SupportCodeResult {
 
 export interface ExportReportResult {
   filePath: string | null
+}
+
+// sfc-scan moved here from the tweak catalog — it's a repair/diagnostic action, not a
+// performance optimization (nothing to detect/apply/revert, no "risk level" that means anything).
+export type SfcScanOutcome = 'clean' | 'repaired' | 'partial' | 'error'
+
+export interface SfcScanResult {
+  outcome: SfcScanOutcome
+  /** Trimmed final sfc.exe output — shown to the customer for support-code purposes. */
+  rawOutput: string
 }
 
 // --- Startup Programs (dynamic, per-machine — not part of the static tweak catalog) ---

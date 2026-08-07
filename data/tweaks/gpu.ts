@@ -146,7 +146,8 @@ export const gpuTweaks: TweakDefinition[] = [
     name: 'Enable Radeon Boost',
     category: 'gpu',
     whatItChanges: 'Turns on Radeon Boost, which briefly lowers render resolution during fast camera motion to raise frame rate, then restores it once motion settles.',
-    whyItMayHelp: 'The resolution drop is normally imperceptible during the fast motion it targets, and the FPS gain during exactly those moments is real and measurable — a genuine tradeoff worth knowing about, not a free lunch, which is why this is medium risk rather than low.',
+    whyItMayHelp:
+      "The FPS gain during fast motion is real and measurable, but so is the resolution drop that causes it — several sources specifically recommend leaving this OFF for ranked/competitive play, since target clarity matters most in exactly the fast-motion moments Boost targets. Better fit for casual or GPU-limited sessions than competitive matches.",
     riskLevel: 'medium',
     fpsImpact: 'high',
     requiresAdmin: true,
@@ -184,7 +185,8 @@ export const gpuTweaks: TweakDefinition[] = [
     name: 'Disable ULPS',
     category: 'gpu',
     whatItChanges: 'Turns off ULPS (Ultra Low Power State), which otherwise aggressively powers down parts of the GPU when AMD\'s driver thinks it\'s idle.',
-    whyItMayHelp: 'ULPS transitions are a known, documented source of stutter and momentary driver hiccups on some AMD setups as the GPU powers components back up — disabling it trades a small amount of idle power draw for one less place stutter can come from.',
+    whyItMayHelp:
+      "ULPS transitions are a known, documented source of stutter on multi-GPU/CrossFire setups specifically — the evidence for single-GPU systems is thinner and contested. The app checks how many GPUs this PC actually has and tells you whether it's worth applying here.",
     riskLevel: 'medium',
     fpsImpact: 'low',
     requiresAdmin: true,

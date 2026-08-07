@@ -18,6 +18,7 @@ import type {
   RestoreSession,
   RevertResult,
   ScanReport,
+  SfcScanResult,
   StartupItem,
   StartupReport,
   StartupToggleResult,
@@ -69,7 +70,8 @@ const api = {
     exportReport: (): Promise<ExportReportResult> => ipcRenderer.invoke('diagnostics:exportReport'),
     generateSupportCode: (): Promise<SupportCodeResult> =>
       ipcRenderer.invoke('diagnostics:generateSupportCode'),
-    revealFile: (filePath: string): Promise<void> => ipcRenderer.invoke('diagnostics:revealFile', filePath)
+    revealFile: (filePath: string): Promise<void> => ipcRenderer.invoke('diagnostics:revealFile', filePath),
+    runSfcScan: (): Promise<SfcScanResult> => ipcRenderer.invoke('diagnostics:runSfcScan')
   },
   startup: {
     getReport: (): Promise<StartupReport> => ipcRenderer.invoke('startup:getReport'),

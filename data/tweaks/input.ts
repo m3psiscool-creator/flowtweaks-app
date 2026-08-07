@@ -7,9 +7,9 @@ export const inputTweaks: TweakDefinition[] = [
     category: 'input',
     whatItChanges: 'Turns off Windows\' "Enhance Pointer Precision" mouse acceleration curve, so cursor movement is a flat, consistent ratio to physical mouse movement.',
     whyItMayHelp:
-      'Acceleration means the same physical swipe moves the cursor a different distance depending on speed — competitive shooters rely on consistent, repeatable aim, which acceleration actively works against.',
+      'Acceleration means the same physical swipe moves the cursor a different distance depending on speed — competitive shooters rely on consistent, repeatable aim, which acceleration actively works against. This is about aim consistency, not frame rate.',
     riskLevel: 'low',
-    fpsImpact: 'medium',
+    fpsImpact: 'none',
     requiresAdmin: false,
     requiresRestart: false,
     reversible: true,

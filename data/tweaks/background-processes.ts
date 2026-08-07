@@ -6,7 +6,8 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
     name: 'Disable SysMain (Superfetch)',
     category: 'background-processes',
     whatItChanges: 'Stops and disables the SysMain service, which preloads apps into RAM based on usage patterns.',
-    whyItMayHelp: 'On systems with fast storage and enough RAM, SysMain\'s background disk activity mostly just competes with the game for resources.',
+    whyItMayHelp:
+      "On SSD/NVMe systems, SysMain's background disk activity mostly just competes with the game for resources. If your game drive is a spinning HDD, SysMain's preloading is doing real work there — skip this one on HDD-primary setups.",
     riskLevel: 'low',
     fpsImpact: 'low',
     requiresAdmin: true,
@@ -64,76 +65,16 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
     ]
   },
   {
-    id: 'disable-imaging-service',
-    name: 'Disable Windows Imaging (WIA)',
+    id: 'disable-gamedvr',
+    name: 'Disable Game Bar Background Capture',
     category: 'background-processes',
-    whatItChanges: 'Stops and disables the Windows Image Acquisition service, used for scanners and some camera/imaging devices.',
-    whyItMayHelp: 'On a PC with no scanner or imaging device attached, this is background service overhead with nothing to do.',
+    whatItChanges:
+      'Turns off Xbox Game Bar\'s background capture buffer (GameDVR) and the app-capture pipeline it uses — separate from just hiding the Game Bar overlay.',
+    whyItMayHelp:
+      'The always-on recording buffer that powers "recent highlights" runs a real background capture pipeline even when you never open Game Bar. Disabling it removes that overhead entirely. Exact FPS/RAM figures circulating online vary too much between sources to repeat as a number — the mechanism is real, treat the size of the effect as unverified.',
     riskLevel: 'low',
-    fpsImpact: 'none',
+    fpsImpact: 'low',
     requiresAdmin: true,
-    requiresRestart: false,
-    reversible: true,
-    compatibility: {},
-    detect: [
-      {
-        type: 'service',
-        serviceName: 'stisvc',
-        desiredStartType: 'disabled',
-        disabledStartType: 'manual',
-        stopIfRunning: true
-      }
-    ],
-    apply: [
-      {
-        type: 'service',
-        serviceName: 'stisvc',
-        desiredStartType: 'disabled',
-        disabledStartType: 'manual',
-        stopIfRunning: true
-      }
-    ]
-  },
-  {
-    id: 'disable-telephony',
-    name: 'Disable Telephony',
-    category: 'background-processes',
-    whatItChanges: 'Stops and disables the Telephony (TAPI) service, used by modems, VoIP, and some fax software to manage phone-line connections.',
-    whyItMayHelp: 'A gaming PC virtually never has a modem or VoIP line to manage — one more idle background service removed.',
-    riskLevel: 'low',
-    fpsImpact: 'none',
-    requiresAdmin: true,
-    requiresRestart: false,
-    reversible: true,
-    compatibility: {},
-    detect: [
-      {
-        type: 'service',
-        serviceName: 'TapiSrv',
-        desiredStartType: 'disabled',
-        disabledStartType: 'manual',
-        stopIfRunning: true
-      }
-    ],
-    apply: [
-      {
-        type: 'service',
-        serviceName: 'TapiSrv',
-        desiredStartType: 'disabled',
-        disabledStartType: 'manual',
-        stopIfRunning: true
-      }
-    ]
-  },
-  {
-    id: 'disable-mixed-reality',
-    name: 'Disable Windows Mixed Reality',
-    category: 'background-processes',
-    whatItChanges: 'Prevents the Windows Mixed Reality Portal from running its first-launch setup, effectively turning the feature off.',
-    whyItMayHelp: 'Without a WMR headset, this is a feature (and its background footprint) with nothing to do — Windows 11 24H2 removed Mixed Reality entirely, so this is a no-op there.',
-    riskLevel: 'low',
-    fpsImpact: 'none',
-    requiresAdmin: false,
     requiresRestart: false,
     reversible: true,
     compatibility: {},
@@ -141,8 +82,26 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
       {
         type: 'registry',
         hive: 'HKCU',
-        path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Holographic',
-        valueName: 'FirstRunSucceeded',
+        path: 'System\\GameConfigStore',
+        valueName: 'GameDVR_Enabled',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      },
+      {
+        type: 'registry',
+        hive: 'HKCU',
+        path: 'Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR',
+        valueName: 'AppCaptureEnabled',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      },
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR',
+        valueName: 'AllowGameDVR',
         valueType: 'REG_DWORD',
         desiredValue: 0,
         disabledValue: 1
@@ -152,11 +111,55 @@ export const backgroundProcessesTweaks: TweakDefinition[] = [
       {
         type: 'registry',
         hive: 'HKCU',
-        path: 'Software\\Microsoft\\Windows\\CurrentVersion\\Holographic',
-        valueName: 'FirstRunSucceeded',
+        path: 'System\\GameConfigStore',
+        valueName: 'GameDVR_Enabled',
         valueType: 'REG_DWORD',
         desiredValue: 0,
         disabledValue: 1
+      },
+      {
+        type: 'registry',
+        hive: 'HKCU',
+        path: 'Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR',
+        valueName: 'AppCaptureEnabled',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      },
+      {
+        type: 'registry',
+        hive: 'HKLM',
+        path: 'SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR',
+        valueName: 'AllowGameDVR',
+        valueType: 'REG_DWORD',
+        desiredValue: 0,
+        disabledValue: 1
+      }
+    ]
+  },
+  {
+    id: 'nic-power-management',
+    name: 'Disable Network Adapter Power Management',
+    category: 'background-processes',
+    whatItChanges:
+      'Runs Disable-NetAdapterPowerManagement across every network adapter, so Windows never idles a NIC down to save power.',
+    whyItMayHelp:
+      'An idled adapter waking on traffic can introduce a small, inconsistent latency spike right when a packet arrives — separate from USB Selective Suspend, this targets the network adapter\'s own power-down behavior specifically.',
+    riskLevel: 'low',
+    fpsImpact: 'low',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: false,
+    // Same class of gap as sfc-scan/disk-cleanup below — externalTool apply isn't wired into the
+    // pipeline yet, so this is scan-visible only for now, not one-click-appliable.
+    compatibility: {},
+    detect: [],
+    apply: [
+      {
+        type: 'externalTool',
+        command: 'powershell.exe',
+        args: ['-NoProfile', '-Command', 'Disable-NetAdapterPowerManagement -Name * -ErrorAction SilentlyContinue'],
+        interactive: false
       }
     ]
   }

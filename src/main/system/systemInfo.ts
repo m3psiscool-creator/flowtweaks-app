@@ -69,6 +69,7 @@ export async function getSystemSpecs(): Promise<SystemSpecs> {
     cpuThreads: cpu.cores,
     gpuModel,
     gpuVendors,
+    gpuCount: graphics.controllers.length,
     chassisType: classifyChassisType(chassis.type),
     ramTotalBytes: mem.total,
     disks: fsSize

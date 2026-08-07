@@ -1,4 +1,5 @@
 import { runPowerShell, psQuote } from '../system/powershell'
+import { isElevated } from '../system/elevation'
 import type { CreateRestorePointResult, RestorePointInfo } from '../../shared/ipc-types'
 
 /** System Restore can be turned off entirely on a drive — check first so we can say why, not just fail. */
@@ -14,6 +15,17 @@ export async function isSystemProtectionEnabled(): Promise<boolean> {
 }
 
 export async function createRestorePoint(description = 'Flow Tweaks'): Promise<CreateRestorePointResult> {
+  // Checkpoint-Computer requires a full admin token — checking this first turns the WMI "Access is
+  // denied" exception (which reads as a scary internal error) into the same graceful message the
+  // rest of the app already shows for an unelevated launch.
+  if (!(await isElevated())) {
+    return {
+      success: false,
+      error:
+        'Flow Tweaks needs administrator rights to create a restore point. Close the app and reopen it, then accept the "Allow this app to make changes" prompt.'
+    }
+  }
+
   const protectionEnabled = await isSystemProtectionEnabled()
   if (!protectionEnabled) {
     return {
@@ -29,7 +41,12 @@ export async function createRestorePoint(description = 'Flow Tweaks'): Promise<C
     )
     return { success: true }
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) }
+    const raw = error instanceof Error ? error.message : String(error)
+    const firstLine = raw.split('\n')[0]?.trim() || raw
+    return {
+      success: false,
+      error: `Windows wouldn't create a restore point (${firstLine}). Nothing was changed.`
+    }
   }
 }
 

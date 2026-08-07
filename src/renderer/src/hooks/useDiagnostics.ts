@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { DiagnosticReport, ExportReportResult, RevertResult, SupportCodeResult } from '@shared/ipc-types'
+import type { DiagnosticReport, ExportReportResult, RevertResult, SfcScanResult, SupportCodeResult } from '@shared/ipc-types'
 
 interface UseDiagnosticsResult {
   report: DiagnosticReport | null
@@ -14,6 +14,9 @@ interface UseDiagnosticsResult {
   restoringDefaults: boolean
   restoreDefaultsResult: RevertResult | null
   restoreDefaults: () => Promise<void>
+  runningSfcScan: boolean
+  sfcScanResult: SfcScanResult | null
+  runSfcScan: () => Promise<void>
 }
 
 export function useDiagnostics(): UseDiagnosticsResult {
@@ -25,6 +28,8 @@ export function useDiagnostics(): UseDiagnosticsResult {
   const [supportCode, setSupportCode] = useState<SupportCodeResult | null>(null)
   const [restoringDefaults, setRestoringDefaults] = useState(false)
   const [restoreDefaultsResult, setRestoreDefaultsResult] = useState<RevertResult | null>(null)
+  const [runningSfcScan, setRunningSfcScan] = useState(false)
+  const [sfcScanResult, setSfcScanResult] = useState<SfcScanResult | null>(null)
 
   const refresh = useCallback(() => {
     setLoading(true)
@@ -63,6 +68,15 @@ export function useDiagnostics(): UseDiagnosticsResult {
     }
   }, [refresh])
 
+  const runSfcScan = useCallback(async () => {
+    setRunningSfcScan(true)
+    try {
+      setSfcScanResult(await window.api.diagnostics.runSfcScan())
+    } finally {
+      setRunningSfcScan(false)
+    }
+  }, [])
+
   return {
     report,
     loading,
@@ -75,6 +89,9 @@ export function useDiagnostics(): UseDiagnosticsResult {
     generateSupportCode,
     restoringDefaults,
     restoreDefaultsResult,
-    restoreDefaults
+    restoreDefaults,
+    runningSfcScan,
+    sfcScanResult,
+    runSfcScan
   }
 }

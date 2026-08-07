@@ -18,7 +18,10 @@ export default function Diagnostics(): React.JSX.Element {
     generateSupportCode,
     restoringDefaults,
     restoreDefaultsResult,
-    restoreDefaults
+    restoreDefaults,
+    runningSfcScan,
+    sfcScanResult,
+    runSfcScan
   } = useDiagnostics()
 
   useEffect(() => {
@@ -153,6 +156,42 @@ export default function Diagnostics(): React.JSX.Element {
               >
                 Show file in folder
               </button>
+            </div>
+          )}
+        </section>
+
+        <section className="ft-glass p-5 lg:col-span-2">
+          <h2 className="ft-heading text-xl text-white/80">System File Checker</h2>
+          <p className="mt-1 text-sm text-white/40">
+            Runs Windows&apos; built-in repair tool (sfc /scannow) to find and fix corrupted system
+            files — not a performance tweak, a repair action. Can take several minutes; the app
+            will be busy the whole time.
+          </p>
+          <button
+            type="button"
+            onClick={runSfcScan}
+            disabled={runningSfcScan}
+            className="ft-heading ft-btn-glow mt-3 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {runningSfcScan ? 'Scanning… this can take a while' : 'Run System File Checker'}
+          </button>
+          {sfcScanResult && (
+            <div className="mt-3 text-sm">
+              <p
+                className={
+                  sfcScanResult.outcome === 'clean' || sfcScanResult.outcome === 'repaired'
+                    ? 'text-status-good'
+                    : sfcScanResult.outcome === 'partial'
+                      ? 'text-status-warning'
+                      : 'text-status-critical'
+                }
+              >
+                {sfcScanResult.outcome === 'clean' && 'No integrity violations found.'}
+                {sfcScanResult.outcome === 'repaired' && 'Corrupted files found and repaired.'}
+                {sfcScanResult.outcome === 'partial' && 'Corrupted files found — some could not be fixed automatically.'}
+                {sfcScanResult.outcome === 'error' && 'Could not complete the scan.'}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-xs text-white/40">{sfcScanResult.rawOutput}</p>
             </div>
           )}
         </section>

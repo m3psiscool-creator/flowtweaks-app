@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ALL_TWEAKS } from '@data/tweaks'
 import { APPLY_ENABLED_TWEAK_IDS, DISABLE_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
-import { CATEGORY_COLORS, CATEGORY_LABELS, type Category } from '@data/schema'
+import { CATEGORY_COLORS, CATEGORY_LABELS, type Category, type RiskLevel } from '@data/schema'
 import type { TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
@@ -10,6 +10,12 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
+import { RISK_LABELS } from '@renderer/lib/tweakDisplay'
+import { getHagsRecommendation } from '@renderer/lib/hagsRecommendation'
+import { getUlpsRecommendation } from '@renderer/lib/ulpsRecommendation'
+import { useSystemInfo } from '@renderer/hooks/useSystemInfo'
+
+const RISK_FILTERS: Array<'all' | RiskLevel> = ['all', 'low', 'medium', 'high']
 
 export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
@@ -19,11 +25,24 @@ export default function Optimizations(): React.JSX.Element {
   const [activeTweakId, setActiveTweakId] = useState<string | null>(null)
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
   const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [riskFilter, setRiskFilter] = useState<'all' | RiskLevel>('all')
+  const { specs } = useSystemInfo()
 
   const anyBusy = applying || disabling
   // Staff can freely test tweaks for support purposes; customers need a pc/both ticket. Scanning
   // stays open to everyone — seeing what you'd get is fine, changing the PC is the gated part.
   const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
+
+  const hagsRecommendation = useMemo(() => {
+    if (!specs) return null
+    return getHagsRecommendation(specs.gpuModel, specs.gpuVendors)
+  }, [specs])
+
+  const ulpsRecommendation = useMemo(() => {
+    if (!specs) return null
+    return getUlpsRecommendation(specs.gpuCount)
+  }, [specs])
 
   const resultByTweakId = useMemo(() => {
     const map = new Map<string, TweakScanResult>()
@@ -46,13 +65,17 @@ export default function Optimizations(): React.JSX.Element {
       'privacy-noise'
     ]
     return order
-      .map((category) => ({ category, tweaks: ALL_TWEAKS.filter((t) => t.category === category) }))
+      .map((category) => ({
+        category,
+        tweaks: ALL_TWEAKS.filter((t) => t.category === category && (riskFilter === 'all' || t.riskLevel === riskFilter))
+      }))
       .filter((group) => group.tweaks.length > 0)
-  }, [])
+  }, [riskFilter])
 
-  // Everything Run All can bulk-enable right now: apply-enabled, compatible, not blocked on
-  // elevation, not already on. Toggling individual tweaks on/off is handled per-card instead —
-  // Run All stays purely a bulk-enable shortcut, it never turns anything off.
+  // Everything that can be picked for a fresh apply right now: apply-enabled, compatible, not
+  // blocked on elevation, not already on. Both "Apply Selected" and "Apply All" draw from this —
+  // Apply All is just "select everything in this set," Apply Selected is whatever the customer
+  // picked by hand. Neither one ever turns anything off — that's the separate "Turn off" action.
   const selectableTweakIds = useMemo(() => {
     if (!report) return new Set<string>()
     return new Set(
@@ -64,17 +87,32 @@ export default function Optimizations(): React.JSX.Element {
     )
   }, [report, resultByTweakId])
 
-  async function runToggleAction(tweakId: string, action: 'enable' | 'disable'): Promise<void> {
+  // Selections can go stale across a rescan (a tweak that was selectable a moment ago might now
+  // read as already-enabled, or a fresh scan might drop it entirely) — prune anything that's no
+  // longer in the selectable set so the count shown on "Apply Selected" is always honest.
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const next = new Set([...prev].filter((id) => selectableTweakIds.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [selectableTweakIds])
+
+  function toggleSelected(tweakId: string): void {
+    if (!selectableTweakIds.has(tweakId) || anyBusy) return
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tweakId)) next.delete(tweakId)
+      else next.add(tweakId)
+      return next
+    })
+  }
+
+  async function runDisable(tweakId: string): Promise<void> {
     if (!canApply) return
     setActiveTweakId(tweakId)
     resetApply()
     resetDisable()
-    if (action === 'enable') {
-      await apply([tweakId], tweakId === 'dns-cloudflare' ? { allowDnsOverride: dnsOverrideConfirmed } : undefined)
-    } else {
-      await disable([tweakId])
-    }
-    setDnsOverrideConfirmed(false)
+    await disable([tweakId])
     setActiveTweakId(null)
     runScan()
   }
@@ -97,20 +135,33 @@ export default function Optimizations(): React.JSX.Element {
     runScan()
   }
 
-  async function handleRunAll(): Promise<void> {
+  async function handleApplySelected(): Promise<void> {
+    if (!canApply) return
+    const ids = [...selectedIds].filter((id) => selectableTweakIds.has(id))
+    if (ids.length === 0) return
+    setActiveTweakId(null)
+    resetApply()
+    resetDisable()
+    await apply(ids)
+    setSelectedIds(new Set())
+    runScan()
+  }
+
+  async function handleApplyAll(): Promise<void> {
     if (!canApply) return
     setActiveTweakId(null)
     resetApply()
     resetDisable()
     await apply([...selectableTweakIds])
+    setSelectedIds(new Set())
     runScan()
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-4xl text-ft-orange">Optimizations</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {report && (
             <button
               type="button"
@@ -124,19 +175,50 @@ export default function Optimizations(): React.JSX.Element {
           {report && (
             <button
               type="button"
-              onClick={handleRunAll}
+              onClick={handleApplySelected}
+              disabled={!canApply || anyBusy || selectedIds.size === 0}
+              className="ft-heading rounded border border-ft-orange/60 px-5 py-2 text-lg tracking-wide text-ft-orange transition-opacity hover:bg-ft-orange/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {applying && selectedIds.size > 0 ? 'Applying…' : `Apply Selected (${selectedIds.size})`}
+            </button>
+          )}
+          {report && (
+            <button
+              type="button"
+              onClick={handleApplyAll}
               disabled={!canApply || anyBusy || selectableTweakIds.size === 0}
               className="ft-heading ft-btn-glow rounded bg-ft-orange px-5 py-2 text-lg tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              {applying && !activeTweakId ? 'Applying…' : `Run All (${selectableTweakIds.size})`}
+              {applying && selectedIds.size === 0 ? 'Applying…' : `Apply All (${selectableTweakIds.size})`}
             </button>
           )}
         </div>
       </div>
 
       <p className="mt-2 text-sm text-white/40">
-        Flip a switch to turn a tweak on or off directly — Run All enables everything available at once.
+        Click a card to select it, pick as many as you want, then Apply Selected — or Apply All to
+        run everything available at once. Already-enabled tweaks show a Turn off link instead.
       </p>
+
+      {report && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-white/40">Risk:</span>
+          {RISK_FILTERS.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRiskFilter(r)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                riskFilter === r
+                  ? 'bg-ft-orange text-ft-black'
+                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
+              }`}
+            >
+              {r === 'all' ? 'All' : RISK_LABELS[r]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <p className="mt-4 text-sm text-status-critical">{error}</p>}
 
@@ -214,23 +296,32 @@ export default function Optimizations(): React.JSX.Element {
               </h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {tweaks.map((tweak) => {
-                  const applyEnabled = APPLY_ENABLED_TWEAK_IDS.has(tweak.id)
                   const tweakResult = resultByTweakId.get(tweak.id)
+                  const alreadyEnabled = tweakResult?.currentState === 'already-enabled'
+                  const canDisable = DISABLE_ENABLED_TWEAK_IDS.has(tweak.id)
                   return (
                     <TweakScanCard
                       key={tweak.id}
                       tweak={tweak}
                       result={tweakResult}
-                      toggle={
-                        applyEnabled
+                      selectable={selectableTweakIds.has(tweak.id) && canApply}
+                      selected={selectedIds.has(tweak.id)}
+                      onToggleSelect={() => toggleSelected(tweak.id)}
+                      disableAction={
+                        alreadyEnabled && canDisable
                           ? {
-                              onEnable: () => runToggleAction(tweak.id, 'enable'),
-                              onDisable: () => runToggleAction(tweak.id, 'disable'),
+                              onDisable: () => runDisable(tweak.id),
                               busy: activeTweakId === tweak.id,
-                              disabled: !canApply || (anyBusy && activeTweakId !== tweak.id),
-                              canDisable: DISABLE_ENABLED_TWEAK_IDS.has(tweak.id)
+                              disabled: !canApply || (anyBusy && activeTweakId !== tweak.id)
                             }
                           : undefined
+                      }
+                      recommendation={
+                        tweak.id === 'hags'
+                          ? (hagsRecommendation ?? undefined)
+                          : tweak.id === 'amd-disable-ulps'
+                            ? (ulpsRecommendation ?? undefined)
+                            : undefined
                       }
                       override={
                         tweakResult?.overrideAvailable

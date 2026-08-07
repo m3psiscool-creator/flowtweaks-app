@@ -96,42 +96,14 @@ const visualEffectsRegistryOps = [
   }
 ]
 
+// disable-memory-integrity was removed entirely (not just gated) after research found Riot
+// Vanguard (Valorant's anti-cheat) hard-requires Memory Integrity/VBS to be on — disabling it
+// breaks Valorant outright (error VAN9005), not just a performance/security tradeoff. A customer
+// who applied this before the fix can turn it back on via Windows Security > Device Security >
+// Core Isolation > Memory Integrity (toggle on, restart), or by setting this same registry value
+// back to 1: HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity
+// \Enabled = 1 (REG_DWORD), then restart.
 export const windowsPerformanceTweaks: TweakDefinition[] = [
-  {
-    id: 'disable-memory-integrity',
-    name: 'Disable Memory Integrity',
-    category: 'windows-performance',
-    whatItChanges: 'Turns off Core Isolation\'s Memory Integrity (hypervisor-enforced code integrity) protection.',
-    whyItMayHelp: 'Memory Integrity adds CPU overhead by running extra checks in a virtualized layer; disabling it can free up a small amount of headroom.',
-    riskLevel: 'high',
-    fpsImpact: 'medium',
-    requiresAdmin: true,
-    requiresRestart: true,
-    reversible: true,
-    compatibility: {},
-    detect: [
-      {
-        type: 'registry',
-        hive: 'HKLM',
-        path: 'SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity',
-        valueName: 'Enabled',
-        valueType: 'REG_DWORD',
-        desiredValue: 0,
-        disabledValue: 1
-      }
-    ],
-    apply: [
-      {
-        type: 'registry',
-        hive: 'HKLM',
-        path: 'SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity',
-        valueName: 'Enabled',
-        valueType: 'REG_DWORD',
-        desiredValue: 0,
-        disabledValue: 1
-      }
-    ]
-  },
   {
     id: 'ultimate-performance-power-plan',
     name: 'Ultimate Performance Power Plan',
@@ -291,13 +263,46 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
     ]
   },
   {
-    id: 'sfc-scan',
-    name: 'System File Checker Scan',
+    id: 'core-parking-disable',
+    name: 'Disable Core Parking',
     category: 'windows-performance',
-    whatItChanges: 'Runs Windows\' built-in System File Checker (sfc /scannow) to find and repair corrupted system files.',
-    whyItMayHelp: 'Corrupted system files can cause crashes, stutters, or odd behavior that no registry tweak will fix — this catches that class of problem.',
+    whatItChanges: 'Sets the minimum parked-core count to 0 on the active power plan, so Windows never idles CPU cores into a deep power-saving state.',
+    whyItMayHelp:
+      'Unparking a core the moment a game\'s main thread needs it costs 1-5ms — enough to show up as an occasional frame-time hitch, not a lower average FPS. Desktop-appropriate; on a laptop this raises idle power draw, heat, and fan noise for a benefit that mostly doesn\'t apply on battery.',
     riskLevel: 'low',
-    fpsImpact: 'none',
+    fpsImpact: 'low',
+    requiresAdmin: true,
+    requiresRestart: false,
+    reversible: false,
+    // Same class of gap as disk-cleanup/disable-usb-selective-suspend above — externalTool apply
+    // isn't wired into the pipeline yet, so this is scan-visible only for now.
+    compatibility: { desktopOnly: true },
+    detect: [],
+    apply: [
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setacvalueindex', 'scheme_current', 'sub_processor', 'CPMINCORES', '0'],
+        interactive: false
+      },
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setactive', 'scheme_current'],
+        interactive: false
+      }
+    ]
+  },
+  {
+    id: 'nvme-power-management',
+    name: 'NVMe Power Management Tuning',
+    category: 'windows-performance',
+    whatItChanges:
+      'Raises NVMe idle-timeout and transition-latency-tolerance thresholds via powercfg, so a fast drive doesn\'t drop into a deep low-power state during brief idle gaps.',
+    whyItMayHelp:
+      'Waking an NVMe drive from a deep power state adds real I/O latency — mostly noticeable as an occasional stall during texture streaming or level loads, not steady frame time. Trades a small amount of idle power draw for fewer of those stalls.',
+    riskLevel: 'low',
+    fpsImpact: 'low',
     requiresAdmin: true,
     requiresRestart: false,
     reversible: false,
@@ -306,9 +311,15 @@ export const windowsPerformanceTweaks: TweakDefinition[] = [
     apply: [
       {
         type: 'externalTool',
-        command: 'sfc.exe',
-        args: ['/scannow'],
-        interactive: true
+        command: 'powercfg.exe',
+        args: ['/setacvalueindex', 'scheme_current', 'sub_disk', 'd639518a-e56d-4345-8af2-b9f32fb26109', '0'],
+        interactive: false
+      },
+      {
+        type: 'externalTool',
+        command: 'powercfg.exe',
+        args: ['/setactive', 'scheme_current'],
+        interactive: false
       }
     ]
   }

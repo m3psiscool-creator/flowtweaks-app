@@ -37,19 +37,23 @@ export const storageCleanupTweaks: TweakDefinition[] = [
     id: 'clear-temp-files',
     name: 'Clear Temp Files',
     category: 'storage-cleanup',
-    whatItChanges: 'Deletes files in %TEMP%, C:\\Windows\\Temp, and C:\\Windows\\Prefetch. Files currently in use are skipped automatically.',
-    whyItMayHelp: 'Frees up disk space and clears out stale temp/prefetch data that can accumulate over time.',
+    whatItChanges: 'Deletes files in %TEMP% and C:\\Windows\\Temp. Files currently in use are skipped automatically.',
+    whyItMayHelp: 'Frees up disk space and clears out stale temp data that can accumulate over time.',
     riskLevel: 'low',
     fpsImpact: 'none',
     requiresAdmin: true,
     requiresRestart: false,
     reversible: false,
+    // Windows\Prefetch is deliberately NOT cleared here — Prefetch files are themselves the
+    // optimization Windows builds to speed up app/game launches. Wiping them forces Windows to
+    // rebuild that data from scratch, which can slow down the next few launches rather than help.
+    // "Delete Prefetch for a speed boost" is a long-standing myth, not a real gain.
     compatibility: {},
     detect: [],
     apply: [
       {
         type: 'fileCleanup',
-        targetPaths: ['%TEMP%', 'C:\\Windows\\Temp', 'C:\\Windows\\Prefetch']
+        targetPaths: ['%TEMP%', 'C:\\Windows\\Temp']
       }
     ]
   },
