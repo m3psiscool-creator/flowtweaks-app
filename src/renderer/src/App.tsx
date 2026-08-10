@@ -27,11 +27,16 @@ export default function App(): React.JSX.Element {
   const ActivePage = PAGES[active] ?? Home
 
   return (
-    <div className="flex h-screen bg-ft-black text-ft-white">
-      <Sidebar active={active} onSelect={setActive} />
-      <main className="flex-1 overflow-y-auto p-8">
-        <ActivePage />
-      </main>
+    <div className="flex h-screen flex-col bg-ft-black text-ft-white">
+      {/* Matches the 32px titleBarOverlay reserved in main/index.ts — the only way the window
+          becomes draggable, since titleBarStyle:'hidden' doesn't add that on its own. */}
+      <div className="ft-titlebar h-8 w-full shrink-0" />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar active={active} onSelect={setActive} />
+        <main className="flex-1 overflow-y-auto p-8">
+          <ActivePage />
+        </main>
+      </div>
     </div>
   )
 }

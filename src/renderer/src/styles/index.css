@@ -43,6 +43,21 @@ body {
   background-attachment: fixed;
 }
 
+/* titleBarStyle:'hidden' (see main/index.ts) removes the native title bar but doesn't make
+   anything draggable on its own — without an explicit drag region the window can only be moved
+   via the OS's alt-space/keyboard fallback. .ft-titlebar covers exactly the reserved
+   titleBarOverlay height so the window can be dragged like a normal app; .ft-no-drag opts
+   interactive children (buttons, links) back out where a draggable region would otherwise eat
+   their clicks. */
+.ft-titlebar {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.ft-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* Electron renders Chromium's default scrollbar (light gray, OS-styled) — visibly clashes with
    the black panel. Scrolling itself (wheel, trackpad, keyboard) is unaffected either way. */
 ::-webkit-scrollbar {
