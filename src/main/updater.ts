@@ -1,5 +1,10 @@
 import { app, BrowserWindow, dialog } from 'electron'
-import { autoUpdater } from 'electron-updater'
+// electron-updater is CommonJS — under Node's ESM loader (this app is "type": "module") a named
+// import silently fails at runtime with "Named export 'autoUpdater' not found" even though
+// TypeScript's typecheck doesn't catch it, since ESM can't statically know a CJS module's named
+// exports. Import the default and destructure instead.
+import pkg from 'electron-updater'
+const { autoUpdater } = pkg
 
 /**
  * Checks GitHub Releases (per package.json's build.publish config) once per launch, downloads
