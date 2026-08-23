@@ -30,19 +30,32 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'about', label: 'About', icon: IconInfo }
 ]
 
+// Everything an unlicensed account can reach: the two tabs that get them to a purchase
+// (FPS Estimator as a free taste, Billing to actually pay), Optimizations itself (shown
+// blurred/locked — see Optimizations.tsx — so they can see exactly what they're missing), and
+// Account, kept only because it's where sign-in lives; there's nowhere else for that to happen.
+export const UNLICENSED_ALLOWED_KEYS = new Set(['fps-estimator', 'billing', 'optimizations', 'account'])
+
 interface SidebarProps {
   active: string
   onSelect: (key: string) => void
+  restricted: boolean
 }
 
-export default function Sidebar({ active, onSelect }: SidebarProps): React.JSX.Element {
+export default function Sidebar({ active, onSelect, restricted }: SidebarProps): React.JSX.Element {
+  const items = restricted ? NAV_ITEMS.filter((item) => UNLICENSED_ALLOWED_KEYS.has(item.key)) : NAV_ITEMS
   return (
     <nav className="flex w-56 shrink-0 flex-col border-r border-white/10 bg-black/40 p-4">
       <div className="ft-heading mb-8 text-2xl text-ft-white">
         FLOW <span className="text-ft-orange">TWEAKS</span>
       </div>
+      {restricted && (
+        <p className="mb-4 rounded border border-ft-orange/30 bg-ft-orange/5 px-2.5 py-2 text-[11px] leading-snug text-ft-orange/80">
+          Locked — unlock a plan in Billing to access the rest of the app.
+        </p>
+      )}
       <ul className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item.key}>
             <button
               type="button"

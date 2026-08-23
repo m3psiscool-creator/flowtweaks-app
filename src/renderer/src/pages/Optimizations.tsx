@@ -7,9 +7,11 @@ import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
 import { useDisable } from '@renderer/hooks/useDisable'
 import { useAccount } from '@renderer/hooks/useAccount'
+import { useAppNavigation } from '@renderer/context/AppNavigation'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
+import { IconShield } from '@renderer/components/icons'
 import { RISK_LABELS } from '@renderer/lib/tweakDisplay'
 import { getHagsRecommendation } from '@renderer/lib/hagsRecommendation'
 import { getUlpsRecommendation } from '@renderer/lib/ulpsRecommendation'
@@ -22,6 +24,7 @@ export default function Optimizations(): React.JSX.Element {
   const { applying, result: applyResult, apply, reset: resetApply } = useApply()
   const { disabling, result: disableResult, disable, reset: resetDisable } = useDisable()
   const { session, hasLicense, loading: accountLoading } = useAccount()
+  const navigate = useAppNavigation()
   const [activeTweakId, setActiveTweakId] = useState<string | null>(null)
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
   const [dnsOverrideModalOpen, setDnsOverrideModalOpen] = useState(false)
@@ -33,6 +36,7 @@ export default function Optimizations(): React.JSX.Element {
   // Staff can freely test tweaks for support purposes; customers need a pc/both ticket. Scanning
   // stays open to everyone — seeing what you'd get is fine, changing the PC is the gated part.
   const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
+  const isLocked = !accountLoading && !canApply
 
   const hagsRecommendation = useMemo(() => {
     if (!specs) return null
@@ -229,13 +233,27 @@ export default function Optimizations(): React.JSX.Element {
         </p>
       )}
 
-      {report && !accountLoading && !canApply && (
-        <p className="ft-glass mt-4 border-ft-orange/30 p-3 text-sm text-white/70">
-          <span className="text-ft-orange font-semibold">Locked.</span>{' '}
-          {session
-            ? "This account doesn't have an unlock yet — buy a plan or redeem an access code from the Billing tab to start applying tweaks."
-            : 'Sign in from the Account tab, then unlock a plan from Billing to start applying tweaks.'}
-        </p>
+      {isLocked && (
+        <div className="ft-glass mt-4 flex flex-wrap items-center justify-between gap-3 border-ft-orange/40 bg-ft-orange/[0.06] p-4">
+          <div className="flex items-center gap-3">
+            <IconShield className="h-6 w-6 shrink-0 text-ft-orange" />
+            <div>
+              <p className="ft-heading text-base text-ft-orange">This account is locked</p>
+              <p className="text-sm text-white/60">
+                {session
+                  ? "You're signed in, but this account hasn't unlocked a plan yet."
+                  : 'Sign in from the Account tab, then unlock a plan to start applying tweaks.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('billing')}
+            className="ft-heading ft-btn-glow shrink-0 rounded bg-ft-orange px-5 py-2.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
+          >
+            Unlock in Billing
+          </button>
+        </div>
       )}
 
       {(applyResult || disableResult) && (
@@ -283,7 +301,12 @@ export default function Optimizations(): React.JSX.Element {
 
       {scanning && !report && <p className="mt-16 text-center text-sm text-white/40">Scanning this PC…</p>}
 
-      <div className="mt-6 flex flex-col gap-8">
+      <div
+        className={`mt-6 flex flex-col gap-8 transition-[filter] duration-200 ${
+          isLocked && report ? 'pointer-events-none select-none blur-sm' : ''
+        }`}
+        aria-hidden={isLocked && !!report}
+      >
         {report &&
           categories.map(({ category, tweaks }) => (
             <section key={category}>

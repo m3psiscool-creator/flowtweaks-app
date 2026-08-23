@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import Sidebar from '@renderer/components/Sidebar'
+import { useEffect, useState } from 'react'
+import Sidebar, { UNLICENSED_ALLOWED_KEYS } from '@renderer/components/Sidebar'
+import { AppNavigationProvider } from '@renderer/context/AppNavigation'
+import { useAccount } from '@renderer/hooks/useAccount'
 import Home from '@renderer/pages/Home'
 import Optimizations from '@renderer/pages/Optimizations'
 import FpsEstimator from '@renderer/pages/FpsEstimator'
@@ -26,7 +28,22 @@ const PAGES: Record<string, () => React.JSX.Element> = {
 
 export default function App(): React.JSX.Element {
   const [active, setActive] = useState('home')
-  const ActivePage = PAGES[active] ?? Home
+  const { session, hasLicense, loading: accountLoading } = useAccount()
+  // Fails closed: while account status is still loading, treat as restricted rather than
+  // briefly showing the full nav and yanking it away a moment later. Staff bypass entirely,
+  // same rule as the "can this account actually apply tweaks" check on Optimizations itself.
+  const isFullAccess = !accountLoading && (session?.user.role === 'staff' || (!!session && hasLicense))
+  const ActivePage = PAGES[active] ?? Optimizations
+
+  // Licensed/staff accounts land on Home as always. Unlicensed accounts start there too (the
+  // default state above), but this immediately bounces them to Optimizations — the one paid
+  // page they're still allowed to see, deliberately blurred/locked (see Optimizations.tsx) so
+  // the first thing they see is exactly what they're missing, not a dead end.
+  useEffect(() => {
+    if (!isFullAccess && !UNLICENSED_ALLOWED_KEYS.has(active)) {
+      setActive('optimizations')
+    }
+  }, [isFullAccess, active])
 
   return (
     <div className="flex h-screen flex-col bg-ft-black text-ft-white">
@@ -34,9 +51,11 @@ export default function App(): React.JSX.Element {
           becomes draggable, since titleBarStyle:'hidden' doesn't add that on its own. */}
       <div className="ft-titlebar h-8 w-full shrink-0" />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar active={active} onSelect={setActive} />
+        <Sidebar active={active} onSelect={setActive} restricted={!isFullAccess} />
         <main className="flex-1 overflow-y-auto p-8">
-          <ActivePage />
+          <AppNavigationProvider value={setActive}>
+            <ActivePage />
+          </AppNavigationProvider>
         </main>
       </div>
     </div>
