@@ -7,7 +7,8 @@ import {
   IconShield,
   IconUser,
   IconInfo,
-  IconRocket
+  IconRocket,
+  IconCreditCard
 } from '@renderer/components/icons'
 
 export interface NavItem {
@@ -25,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'restore', label: 'Restore', icon: IconClock },
   { key: 'diagnostics', label: 'Diagnostics', icon: IconShield },
   { key: 'account', label: 'Account', icon: IconUser },
+  { key: 'billing', label: 'Billing', icon: IconCreditCard },
   { key: 'about', label: 'About', icon: IconInfo }
 ]
 

@@ -180,3 +180,13 @@ export function IconInfo({ className }: IconProps): React.JSX.Element {
     </svg>
   )
 }
+
+export function IconCreditCard({ className }: IconProps): React.JSX.Element {
+  return (
+    <svg {...base} className={className}>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="1.8" />
+      <path d="M2.5 9.5h19" />
+      <path d="M6 14.5h4" />
+    </svg>
+  )
+}

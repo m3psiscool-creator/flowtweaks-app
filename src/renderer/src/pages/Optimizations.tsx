@@ -233,8 +233,8 @@ export default function Optimizations(): React.JSX.Element {
         <p className="ft-glass mt-4 border-ft-orange/30 p-3 text-sm text-white/70">
           <span className="text-ft-orange font-semibold">Locked.</span>{' '}
           {session
-            ? "This account doesn't have an unlock yet — buy a plan or redeem an access code from the Account tab to start applying tweaks."
-            : 'Sign in and unlock a plan from the Account tab to start applying tweaks.'}
+            ? "This account doesn't have an unlock yet — buy a plan or redeem an access code from the Billing tab to start applying tweaks."
+            : 'Sign in from the Account tab, then unlock a plan from Billing to start applying tweaks.'}
         </p>
       )}
 

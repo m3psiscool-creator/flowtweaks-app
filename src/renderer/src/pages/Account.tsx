@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { useAccount } from '@renderer/hooks/useAccount'
-import type { AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
+import type { AccountTicket } from '@shared/ipc-types'
 import { IconUser, IconShield, IconClock } from '@renderer/components/icons'
-
-const PLANS: { id: AppPurchasablePlan; label: string; price: string; blurb: string }[] = [
-  { id: 'pc', label: 'PC', price: '$11.99', blurb: 'Full Windows optimization' },
-  { id: 'both', label: 'PC + Console', price: '$14.99', blurb: 'Everything in PC, plus console setup' }
-]
 
 const STATUS_LABELS: Record<AccountTicket['status'], string> = {
   open: 'Open',
@@ -40,22 +35,8 @@ function TicketRow({ ticket }: { ticket: AccountTicket }): React.JSX.Element {
 }
 
 export default function Account(): React.JSX.Element {
-  const {
-    session,
-    loading,
-    tickets,
-    loadingTickets,
-    hasLicense,
-    error,
-    busy,
-    requestCode,
-    verifyCode,
-    staffLogin,
-    logout,
-    refreshTickets,
-    buyPlan,
-    redeemCode
-  } = useAccount()
+  const { session, loading, tickets, loadingTickets, error, busy, requestCode, verifyCode, staffLogin, logout } =
+    useAccount()
 
   const [mode, setMode] = useState<'customer' | 'staff'>('customer')
   const [email, setEmail] = useState('')
@@ -63,8 +44,6 @@ export default function Account(): React.JSX.Element {
   const [code, setCode] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [accessCode, setAccessCode] = useState('')
-  const [redeemMessage, setRedeemMessage] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -210,105 +189,31 @@ export default function Account(): React.JSX.Element {
             Staff view — showing all open and assigned customer tickets.
           </p>
         )}
-      </section>
-
-      {!isStaff && !loadingTickets && !hasLicense && (
-        <section className="ft-glass mt-6 border-ft-orange/30 p-5">
-          <h2 className="ft-heading text-xl text-ft-orange">Unlock Flow Tweaks</h2>
-          <p className="mt-2 text-sm text-white/60">
-            Buy a plan to unlock every tweak on this PC, or redeem an access code if you have one.
+        {!isStaff && (
+          <p className="mt-3 text-xs text-white/40">
+            Looking to buy a plan, redeem a code, or check payment history? Head to the Billing tab.
           </p>
-
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {PLANS.map((plan) => (
-              <div key={plan.id} className="ft-glass-solid flex flex-col p-4">
-                <span className="ft-heading text-lg text-white">{plan.label}</span>
-                <span className="text-2xl font-bold text-ft-orange">{plan.price}</span>
-                <span className="mt-1 text-xs text-white/50">{plan.blurb}</span>
-                <button
-                  type="button"
-                  onClick={() => buyPlan(plan.id)}
-                  disabled={busy}
-                  className="ft-heading ft-btn-glow mt-4 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
-                >
-                  {busy ? 'Opening checkout…' : `Buy — ${plan.price}`}
-                </button>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-white/30">
-            Opens Stripe checkout in your browser. Once paid, come back here and hit Refresh below.
-          </p>
-
-          <div className="mt-5 flex flex-col gap-2 border-t border-white/10 pt-4">
-            <label className="text-xs uppercase tracking-wide text-white/40">Have an access code?</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="XXXX-XXXX-XXXX"
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                className="flex-1 rounded border border-white/15 bg-black/40 px-3 py-2 text-sm text-white"
-              />
-              <button
-                type="button"
-                onClick={async () => {
-                  setRedeemMessage(null)
-                  const ok = await redeemCode(accessCode)
-                  setRedeemMessage(ok ? 'Code redeemed — you\'re unlocked!' : null)
-                  if (ok) setAccessCode('')
-                }}
-                disabled={busy || !accessCode}
-                className="rounded border border-ft-orange/50 px-4 py-2 text-sm text-ft-orange hover:bg-ft-orange/10 disabled:opacity-40"
-              >
-                Redeem
-              </button>
-            </div>
-            {redeemMessage && <p className="text-sm text-status-good">{redeemMessage}</p>}
-            {error && <p className="text-sm text-status-critical">{error}</p>}
-          </div>
-
-          <button
-            type="button"
-            onClick={refreshTickets}
-            disabled={loadingTickets}
-            className="mt-4 text-xs text-white/40 underline hover:text-white/70 disabled:opacity-40"
-          >
-            {loadingTickets ? 'Checking…' : 'Refresh — I already paid'}
-          </button>
-        </section>
-      )}
-
-      {!isStaff && hasLicense && (
-        <section className="ft-glass mt-6 border-status-good/30 p-5">
-          <h2 className="ft-heading flex items-center gap-2 text-xl text-status-good">
-            <IconShield className="h-5 w-5" /> Unlocked
-          </h2>
-          <p className="mt-2 text-sm text-white/60">
-            Your tweaks are unlocked on this account — head to Optimizations to get started.
-          </p>
-        </section>
-      )}
-
-      <section className="ft-glass mt-6 p-5">
-        <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
-          <IconClock className="h-5 w-5" /> {isStaff ? 'Customer Tickets' : 'Plan & Support History'}
-        </h2>
-        {loadingTickets ? (
-          <p className="mt-3 text-sm text-white/40">Loading…</p>
-        ) : tickets.length === 0 ? (
-          <p className="mt-3 text-sm text-white/40">
-            {isStaff ? 'No open or assigned tickets.' : "No orders found on this account yet."}
-          </p>
-        ) : (
-          <div className="mt-3 flex flex-col">
-            {tickets.map((t) => (
-              <TicketRow key={t.id} ticket={t} />
-            ))}
-          </div>
         )}
       </section>
 
+      {isStaff && (
+        <section className="ft-glass mt-6 p-5">
+          <h2 className="ft-heading flex items-center gap-2 text-xl text-white/80">
+            <IconClock className="h-5 w-5" /> Customer Tickets
+          </h2>
+          {loadingTickets ? (
+            <p className="mt-3 text-sm text-white/40">Loading…</p>
+          ) : tickets.length === 0 ? (
+            <p className="mt-3 text-sm text-white/40">No open or assigned tickets.</p>
+          ) : (
+            <div className="mt-3 flex flex-col">
+              {tickets.map((t) => (
+                <TicketRow key={t.id} ticket={t} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }

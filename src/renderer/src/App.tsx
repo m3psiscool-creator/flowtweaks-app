@@ -8,6 +8,7 @@ import StartupPrograms from '@renderer/pages/StartupPrograms'
 import Restore from '@renderer/pages/Restore'
 import Diagnostics from '@renderer/pages/Diagnostics'
 import Account from '@renderer/pages/Account'
+import Billing from '@renderer/pages/Billing'
 import About from '@renderer/pages/About'
 
 const PAGES: Record<string, () => React.JSX.Element> = {
@@ -19,6 +20,7 @@ const PAGES: Record<string, () => React.JSX.Element> = {
   restore: Restore,
   diagnostics: Diagnostics,
   account: Account,
+  billing: Billing,
   about: About
 }
 

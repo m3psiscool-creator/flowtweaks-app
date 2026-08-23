@@ -323,8 +323,13 @@ export interface RequestCodeResult {
   message: string
 }
 
-/** Only 'pc' and 'both' can be bought in-app — console has no Windows app to unlock, stays a website+Discord purchase. */
-export type AppPurchasablePlan = 'pc' | 'both'
+/**
+ * Only 'pc' can be bought in-app — console has no Windows app to unlock, stays a website+Discord
+ * purchase. The PC+Console combo ('both') was discontinued as a purchase option; it's deliberately
+ * excluded here so it can no longer be selected, but TicketPlan above still includes it so existing
+ * combo tickets keep deserializing correctly, and hasAppLicense (useAccount.ts) still honors them.
+ */
+export type AppPurchasablePlan = 'pc'
 
 export interface CheckoutResult {
   ok: boolean

@@ -10,6 +10,7 @@ import { registerAccountIpcHandlers } from './ipc/account'
 import { registerStartupIpcHandlers } from './ipc/startup'
 import { relaunchElevatedIfNeeded } from './system/selfElevate'
 import { reconcilePendingEntries } from './restore/reconcile'
+import { initAutoUpdater } from './updater'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -82,6 +83,7 @@ app.whenReady().then(async () => {
   await reconcilePendingEntries()
 
   createWindow()
+  initAutoUpdater()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
