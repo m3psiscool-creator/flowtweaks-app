@@ -146,8 +146,8 @@ does. There is no payment, no Stripe Checkout session, and no manual
 session required.
 
 ```
-POST /api/referral/redeem
-  body: { email, plan_id }
+POST /api/referral/redeem          (requires referrer token — see section 8)
+  body: { plan_id }
   - POINT_COSTS = { console: 1, pc: 3 }
   - REJECT if points_balance < cost
   - deduct points and grant the package entitlement in ONE transaction
@@ -159,6 +159,44 @@ POST /api/referral/redeem
     redemptions from sales at a glance
   - return { plan_id, points_remaining }
 ```
+
+**Console is the exception to "unlock the package like a purchase."** A
+console ticket never unlocks the desktop app — only pc/both do (see
+`hasAppLicense` in the app repo). There is nothing to "open the app and
+sign in" for. Console delivery is instead:
+
+```
+POST /api/referral/console-guide   (requires referrer token)
+  body: { agree: bool }
+  - REJECT (400) if agree is not true
+  - REJECT (403) unless the account has an open (non-completed) console
+    ticket on file — redeemed or purchased, doesn't matter which
+  - record the TOS/no-distribution agreement (console_guide_deliveries)
+  - return { pdf_url } — a static PDF at a non-guessable path, not
+    watermarked per recipient; this endpoint is the only place the URL
+    is ever revealed
+```
+
+Same delivery, two more entry points — one shared `_deliver_console_guide`
+helper, not three copies of the entitlement check:
+
+```
+POST /api/console-guide            (requires customer token)
+  body: { agree: bool } — for a customer already logged into the app
+
+POST /api/console-guide/from-session
+  body: { session_id, agree: bool } — for Success.jsx right after paying,
+  no login at all. Re-verifies the session against Stripe directly (same
+  trust model as /tickets/from-payment) via a shared resolver both
+  endpoints call, so a click here can't race the webhook that creates the
+  customer/ticket in the first place — whichever runs first does the
+  creating, the other just reads it back.
+```
+
+The frontend gates the redeem call itself behind a TOS/no-distribution
+checkbox for console specifically, then calls this endpoint to reveal the
+download link. PC redemption is unaffected — still instant, still "open
+the app."
 
 **Find the existing entitlement code before writing this.** If granting
 access happens in the Stripe webhook, extract it into a shared function that
