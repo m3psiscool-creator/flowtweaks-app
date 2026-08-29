@@ -8,6 +8,7 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import { useAppNavigation } from '@renderer/context/AppNavigation'
 import Gauge from '@renderer/components/Gauge'
 import { IconGamepad, IconBolt, IconInfo, IconShield } from '@renderer/components/icons'
+import { REFERRAL_URL } from '@renderer/lib/links'
 
 const IMPACT_SCORE: Record<FpsImpact, number> = { none: 0, low: 1, medium: 2, high: 3 }
 // A shared ceiling across every profile, not a per-profile-normalized percentage. Normalizing by
@@ -157,9 +158,19 @@ export default function FpsEstimator(): React.JSX.Element {
                 <div className="ft-glass mt-3 flex flex-wrap items-center justify-between gap-3 border-ft-orange/40 bg-ft-orange/[0.06] p-4">
                   <div className="flex items-center gap-3">
                     <IconShield className="h-5 w-5 shrink-0 text-ft-orange" />
-                    <p className="text-sm text-white/60">
-                      Unlock a plan to see exactly which tweaks these are.
-                    </p>
+                    <div>
+                      <p className="text-sm text-white/60">
+                        Unlock a plan to see exactly which tweaks these are.
+                      </p>
+                      <a
+                        href={REFERRAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-sm text-ft-orange underline hover:opacity-80"
+                      >
+                        Or earn it free — refer friends and redeem points for a plan
+                      </a>
+                    </div>
                   </div>
                   <button
                     type="button"

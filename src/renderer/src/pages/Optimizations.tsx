@@ -12,6 +12,7 @@ import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
 import { IconShield } from '@renderer/components/icons'
+import { REFERRAL_URL } from '@renderer/lib/links'
 import { RISK_LABELS } from '@renderer/lib/tweakDisplay'
 import { getHagsRecommendation } from '@renderer/lib/hagsRecommendation'
 import { getUlpsRecommendation } from '@renderer/lib/ulpsRecommendation'
@@ -248,6 +249,14 @@ export default function Optimizations(): React.JSX.Element {
                   ? "You're signed in, but this account hasn't unlocked a plan yet."
                   : 'Sign in from the Account tab, then unlock a plan to start applying tweaks.'}
               </p>
+              <a
+                href={REFERRAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-block text-sm text-ft-orange underline hover:opacity-80"
+              >
+                Or earn it free — refer friends and redeem points for a plan
+              </a>
             </div>
           </div>
           <button

@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useAccount } from '@renderer/hooks/useAccount'
 import type { AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
 import { IconCreditCard, IconShield, IconClock, IconSparkle } from '@renderer/components/icons'
-
-const REFERRAL_URL = 'https://flowtweaks.com/referral'
+import { REFERRAL_URL } from '@renderer/lib/links'
 
 // PC+Console combo was discontinued as a purchase option — see AppPurchasablePlan. Anyone who
 // already bought it keeps their unlock (useAccount's hasAppLicense still honors 'both' tickets);
