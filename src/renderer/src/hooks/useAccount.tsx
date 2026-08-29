@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import type { AccountSession, AccountTicket, AppPurchasablePlan, TicketPlan } from '@shared/ipc-types'
 
 // A ticket for pc or both means the desktop app itself is unlocked — console-only tickets are
@@ -31,7 +32,13 @@ interface UseAccountResult {
   redeemCode: (code: string) => Promise<{ ok: boolean; plan?: TicketPlan }>
 }
 
-export function useAccount(): UseAccountResult {
+// Plain hooks re-run their state independently per call site — with six different pages each
+// calling this, that meant six independent session/ticket fetches (and, once retries were added,
+// six independently-timed retry sequences) that could genuinely disagree with each other: Billing
+// could show "unlocked" from its own successful fetch while the sidebar, mid-retry on its own
+// separate fetch, still showed "locked". AccountProvider below runs this exactly once and shares
+// the result via context so every consumer sees the same state at the same time.
+function useAccountState(): UseAccountResult {
   const [session, setSession] = useState<AccountSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [tickets, setTickets] = useState<AccountTicket[]>([])
@@ -191,4 +198,19 @@ export function useAccount(): UseAccountResult {
     buyPlan,
     redeemCode
   }
+}
+
+const AccountContext = createContext<UseAccountResult | null>(null)
+
+export function AccountProvider({ children }: { children: ReactNode }): React.JSX.Element {
+  const value = useAccountState()
+  return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>
+}
+
+export function useAccount(): UseAccountResult {
+  const ctx = useContext(AccountContext)
+  if (!ctx) {
+    throw new Error('useAccount must be used within an AccountProvider')
+  }
+  return ctx
 }

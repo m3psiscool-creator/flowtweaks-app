@@ -5,9 +5,12 @@ import '@fontsource/orbitron/900.css'
 import '@fontsource/bebas-neue'
 import './styles/index.css'
 import App from './App'
+import { AccountProvider } from '@renderer/hooks/useAccount'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <AccountProvider>
+      <App />
+    </AccountProvider>
   </React.StrictMode>
 )

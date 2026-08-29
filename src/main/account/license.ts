@@ -1,7 +1,7 @@
 import { loadSession } from './sessionStore'
 import { getMyTickets } from './backendClient'
 
-// Mirrors useAccount.ts's hasAppLicense (renderer) — duplicated intentionally rather than shared,
+// Mirrors useAccount.tsx's hasAppLicense (renderer) — duplicated intentionally rather than shared,
 // since this is the one that actually matters: it runs in the main process, ahead of tweaks:apply
 // and tweaks:disable, so a customer can't unlock tweaks just by skipping the renderer's UI gate
 // and invoking the IPC channel directly.
