@@ -172,9 +172,10 @@ POST /api/referral/console-guide   (requires referrer token)
   - REJECT (403) unless the account has an open (non-completed) console
     ticket on file — redeemed or purchased, doesn't matter which
   - record the TOS/no-distribution agreement (console_guide_deliveries)
-  - return { pdf_url } — a static PDF at a non-guessable path, not
-    watermarked per recipient; this endpoint is the only place the URL
-    is ever revealed
+  - return the PDF itself (application/pdf), generated fresh per
+    request with the recipient's email stamped onto every page — see
+    console_guide.py. No static file, no fixed URL to hand out;
+    each authorized request gets its own freshly-watermarked copy.
 ```
 
 Same delivery, two more entry points — one shared `_deliver_console_guide`
