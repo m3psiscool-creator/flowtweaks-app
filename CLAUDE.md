@@ -265,28 +265,52 @@ cash_payouts
 ### Public
 
 ```
-POST /api/referral/signup
-  body: { discord_handle, email, reward_type }
-  - reject duplicates
-  - generate unique code, uppercase alphanumeric, exclude 0/O/1/I/L
-  - return { code, reward_type }
+POST /api/referral/auth/request
+  body: { email, discord_handle? }
+  - discord_handle only used if this email has no referral account yet at verify time
+  - always sends a 6-digit email code (10 min expiry) and returns the same generic
+    { ok, message, expires_in } either way — never reveals whether the email is registered
+  - rate limited by IP
+
+POST /api/referral/auth/verify
+  body: { email, code }
+  - verifies the code; if no referrer exists for this email, creates one (needs
+    discord_handle from the matching /auth/request call — 400 if missing), generating a
+    unique code, uppercase alphanumeric, exclude 0/O/1/I/L; new signups always start
+    reward_type: tweaks
+  - 403 if the referrer is suspended
+  - issues a JWT (role: referrer, 30-day TTL, same pattern as customer/staff tokens)
+  - return { token, code, reward_type }
+  - rate limited by IP (this is the endpoint that guards against code-guessing, not just
+    /auth/request)
+
+  Replaces the original spec's unauthenticated POST /api/referral/signup and the
+  "unauthenticated email lookup" design for balance/redeem/reward-type below — those let
+  anyone who merely knew a referrer's email view their balance, redeem their points, or
+  flip their reward-type preference. Every referral endpoint below except validate now
+  requires this token (X-Authorization: Bearer, same as customer/staff auth) instead of
+  taking email as a client-supplied parameter.
 
 GET /api/referral/validate/{code}
   - returns { valid: bool } only — never leak the referrer's identity
+  - the one referral endpoint that stays fully public — a buyer validating someone else's
+    code at checkout has no account of their own to authenticate with
 
-GET /api/referral/balance?email={email}
+GET /api/referral/balance                                    (requires referrer token)
   - { code, reward_type, points_balance, cash_balance, pending_points,
       pending_cash, referral_count, lifetime_points, lifetime_cash,
       payouts_enabled, needs_connect_onboarding,
       redeemable: { console, pc } }
   - `code` added beyond the original spec — Referral.jsx's balance view needs it for the
     copy-to-clipboard code/share-link, and signup only returns it once, at signup time
-  - rate limit; unauthenticated email lookup
+  - referrer identified by the token's sub, not a query param
 
-POST /api/referral/reward-type
-  - changes preference for FUTURE referrals only
+POST /api/referral/reward-type                                (requires referrer token)
+  - body: { reward_type } — no email; changes preference for FUTURE referrals only
 
-POST /api/referral/redeem          (see section 4)
+POST /api/referral/redeem          (see section 4)             (requires referrer token)
+  - body: { plan_id } — no email; unlocks on the customer account matching the
+    authenticated referrer's own email on file
 
 POST /api/referral/connect/onboard
   - creates Stripe Express account if needed, returns onboarding_url
