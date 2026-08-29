@@ -28,11 +28,13 @@ const PAGES: Record<string, () => React.JSX.Element> = {
 
 export default function App(): React.JSX.Element {
   const [active, setActive] = useState('home')
-  const { session, hasLicense, loading: accountLoading } = useAccount()
-  // Fails closed: while account status is still loading, treat as restricted rather than
-  // briefly showing the full nav and yanking it away a moment later. Staff bypass entirely,
-  // same rule as the "can this account actually apply tweaks" check on Optimizations itself.
-  const isFullAccess = !accountLoading && (session?.user.role === 'staff' || (!!session && hasLicense))
+  const { session, hasLicense, loading: accountLoading, loadingTickets } = useAccount()
+  // While we don't yet know (session still loading, or the ticket fetch is mid-retry after a
+  // cold Render backend) we neither grant nor revoke access — see useAccount's retry loop. Only
+  // a completed check (success or exhausted retries) is allowed to change what's shown; a slow
+  // backend must never look the same as an unlicensed account.
+  const stillChecking = accountLoading || (!!session && loadingTickets)
+  const isFullAccess = session?.user.role === 'staff' || (!!session && hasLicense)
   const ActivePage = PAGES[active] ?? Optimizations
 
   // Licensed/staff accounts land on Home as always. Unlicensed accounts start there too (the
@@ -40,10 +42,11 @@ export default function App(): React.JSX.Element {
   // page they're still allowed to see, deliberately blurred/locked (see Optimizations.tsx) so
   // the first thing they see is exactly what they're missing, not a dead end.
   useEffect(() => {
+    if (stillChecking) return
     if (!isFullAccess && !UNLICENSED_ALLOWED_KEYS.has(active)) {
       setActive('optimizations')
     }
-  }, [isFullAccess, active])
+  }, [stillChecking, isFullAccess, active])
 
   return (
     <div className="flex h-screen flex-col bg-ft-black text-ft-white">
@@ -51,7 +54,7 @@ export default function App(): React.JSX.Element {
           becomes draggable, since titleBarStyle:'hidden' doesn't add that on its own. */}
       <div className="ft-titlebar h-8 w-full shrink-0" />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar active={active} onSelect={setActive} restricted={!isFullAccess} />
+        <Sidebar active={active} onSelect={setActive} restricted={!stillChecking && !isFullAccess} />
         <main className="flex-1 overflow-y-auto p-8">
           <AppNavigationProvider value={setActive}>
             <ActivePage />

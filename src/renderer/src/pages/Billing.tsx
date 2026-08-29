@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useAccount } from '@renderer/hooks/useAccount'
 import type { AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
-import { IconCreditCard, IconShield, IconClock } from '@renderer/components/icons'
+import { IconCreditCard, IconShield, IconClock, IconSparkle } from '@renderer/components/icons'
+
+const REFERRAL_URL = 'https://flowtweaks.com/referral'
 
 // PC+Console combo was discontinued as a purchase option — see AppPurchasablePlan. Anyone who
 // already bought it keeps their unlock (useAccount's hasAppLicense still honors 'both' tickets);
@@ -47,6 +49,7 @@ export default function Billing(): React.JSX.Element {
     loading,
     tickets,
     loadingTickets,
+    ticketsError,
     hasLicense,
     error,
     busy,
@@ -97,7 +100,49 @@ export default function Billing(): React.JSX.Element {
         </p>
       )}
 
-      {!isStaff && !loadingTickets && !hasLicense && (
+      {!isStaff && (
+        <a
+          href={REFERRAL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ft-glass ft-hoverable-subtle mt-6 flex items-center justify-between gap-3 border-ft-orange/30 p-4 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <IconSparkle className="h-6 w-6 shrink-0 text-ft-orange" />
+            <div>
+              <p className="ft-heading text-base text-white">Join the referral program</p>
+              <p className="text-sm text-white/50">
+                Share your code — earn free tweaks for every friend who buys.
+              </p>
+            </div>
+          </div>
+          <span className="ft-heading shrink-0 text-sm tracking-wide text-ft-orange">Get my code →</span>
+        </a>
+      )}
+
+      {!isStaff && loadingTickets && (
+        <section className="ft-glass mt-6 p-5">
+          <p className="text-sm text-white/50">Checking your account…</p>
+        </section>
+      )}
+
+      {!isStaff && !loadingTickets && ticketsError && !hasLicense && (
+        <section className="ft-glass mt-6 border-status-warning/30 p-5">
+          <p className="text-sm text-white/60">
+            Couldn&apos;t reach the server to check your account — this can happen right after the
+            backend wakes up from being idle. This doesn&apos;t mean you&apos;re unlicensed.
+          </p>
+          <button
+            type="button"
+            onClick={refreshTickets}
+            className="ft-heading mt-3 rounded border border-ft-orange/50 px-4 py-2 text-sm text-ft-orange hover:bg-ft-orange/10"
+          >
+            Retry
+          </button>
+        </section>
+      )}
+
+      {!isStaff && !loadingTickets && !ticketsError && !hasLicense && (
         <section className="ft-glass mt-6 border-ft-orange/30 p-5">
           <h2 className="ft-heading text-xl text-ft-orange">Unlock Flow Tweaks</h2>
           <p className="mt-2 text-sm text-white/60">
@@ -153,9 +198,18 @@ export default function Billing(): React.JSX.Element {
                 type="button"
                 onClick={async () => {
                   setRedeemMessage(null)
-                  const ok = await redeemCode(accessCode)
-                  setRedeemMessage(ok ? 'Code redeemed — you\'re unlocked!' : null)
-                  if (ok) setAccessCode('')
+                  const result = await redeemCode(accessCode)
+                  if (result.ok) {
+                    // Only pc/both tickets actually unlock this app (see useAccount's
+                    // hasAppLicense) — a console code redeems for real, but doesn't unlock
+                    // anything here, so saying "you're unlocked!" for one would be a lie.
+                    setRedeemMessage(
+                      result.plan === 'console'
+                        ? 'Code redeemed — this grants a console tweak, handled via your Discord ticket. It won’t unlock this app.'
+                        : 'Code redeemed — you’re unlocked!'
+                    )
+                    setAccessCode('')
+                  }
                 }}
                 disabled={busy || !accessCode}
                 className="rounded border border-ft-orange/50 px-4 py-2 text-sm text-ft-orange hover:bg-ft-orange/10 disabled:opacity-40"

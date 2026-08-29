@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { AccountSession, AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
+import type { AccountSession, AccountTicket, AppPurchasablePlan, TicketPlan } from '@shared/ipc-types'
 
 // A ticket for pc or both means the desktop app itself is unlocked — console-only tickets are
 // real purchases, just not ones this Windows app can do anything with (see AppPurchasablePlan).
@@ -7,11 +7,18 @@ function hasAppLicense(tickets: AccountTicket[]): boolean {
   return tickets.some((t) => t.plan === 'pc' || t.plan === 'both')
 }
 
+// The backend (Render free tier) spins down after inactivity and can take 50+ seconds to wake —
+// without a retry, the very first ticket fetch after any period of idleness fails, hasLicense
+// silently reads as false, and an already-paying customer sees the buy screen as if signed out.
+// These delays span roughly that whole wake-up window before giving up for real.
+const TICKET_RETRY_DELAYS_MS = [5000, 10000, 15000, 20000]
+
 interface UseAccountResult {
   session: AccountSession | null
   loading: boolean
   tickets: AccountTicket[]
   loadingTickets: boolean
+  ticketsError: string | null
   hasLicense: boolean
   error: string | null
   busy: boolean
@@ -21,7 +28,7 @@ interface UseAccountResult {
   logout: () => Promise<void>
   refreshTickets: () => void
   buyPlan: (plan: AppPurchasablePlan, referralCode?: string) => Promise<boolean>
-  redeemCode: (code: string) => Promise<boolean>
+  redeemCode: (code: string) => Promise<{ ok: boolean; plan?: TicketPlan }>
 }
 
 export function useAccount(): UseAccountResult {
@@ -29,15 +36,32 @@ export function useAccount(): UseAccountResult {
   const [loading, setLoading] = useState(true)
   const [tickets, setTickets] = useState<AccountTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(false)
+  const [ticketsError, setTicketsError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const loadTickets = useCallback((role: 'customer' | 'staff') => {
+  const loadTickets = useCallback(async (role: 'customer' | 'staff') => {
     setLoadingTickets(true)
+    setTicketsError(null)
     const fetcher = role === 'staff' ? window.api.account.getStaffTickets : window.api.account.getMyTickets
-    fetcher()
-      .then(setTickets)
-      .finally(() => setLoadingTickets(false))
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const result = await fetcher()
+        setTickets(result)
+        setTicketsError(null)
+        break
+      } catch (err) {
+        if (attempt >= TICKET_RETRY_DELAYS_MS.length) {
+          // Retries exhausted — a real failure, not just a cold start. Leave `tickets` as it was
+          // (don't clobber a last-known-good license state with an empty list) and surface the
+          // error so the UI can show "couldn't check" instead of confidently declaring "unlicensed."
+          setTicketsError(err instanceof Error ? err.message : String(err))
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, TICKET_RETRY_DELAYS_MS[attempt]))
+      }
+    }
+    setLoadingTickets(false)
   }, [])
 
   useEffect(() => {
@@ -139,10 +163,10 @@ export function useAccount(): UseAccountResult {
         const result = await window.api.account.redeemCode(code)
         if (!result.ok) {
           setError(result.error ?? 'Invalid or already-used code.')
-          return false
+          return { ok: false }
         }
         refreshTickets()
-        return true
+        return { ok: true, plan: result.ticket?.plan }
       } finally {
         setBusy(false)
       }
@@ -155,6 +179,7 @@ export function useAccount(): UseAccountResult {
     loading,
     tickets,
     loadingTickets,
+    ticketsError,
     hasLicense: hasAppLicense(tickets),
     error,
     busy,

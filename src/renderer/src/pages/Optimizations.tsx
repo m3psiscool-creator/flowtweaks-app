@@ -23,7 +23,7 @@ export default function Optimizations(): React.JSX.Element {
   const { report, scanning, error, runScan } = useScan()
   const { applying, result: applyResult, apply, reset: resetApply } = useApply()
   const { disabling, result: disableResult, disable, reset: resetDisable } = useDisable()
-  const { session, hasLicense, loading: accountLoading } = useAccount()
+  const { session, hasLicense, loading: accountLoading, loadingTickets } = useAccount()
   const navigate = useAppNavigation()
   const [activeTweakId, setActiveTweakId] = useState<string | null>(null)
   const [dnsOverrideConfirmed, setDnsOverrideConfirmed] = useState(false)
@@ -36,7 +36,11 @@ export default function Optimizations(): React.JSX.Element {
   // Staff can freely test tweaks for support purposes; customers need a pc/both ticket. Scanning
   // stays open to everyone — seeing what you'd get is fine, changing the PC is the gated part.
   const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
-  const isLocked = !accountLoading && !canApply
+  // Not just !accountLoading — a signed-in customer's tickets can still be mid-retry against a
+  // cold Render backend (see useAccount's TICKET_RETRY_DELAYS_MS). Locking during that window
+  // would show "you need to buy" to someone who's already paid, indistinguishable from being
+  // signed out.
+  const isLocked = !accountLoading && !loadingTickets && !canApply
 
   const hagsRecommendation = useMemo(() => {
     if (!specs) return null

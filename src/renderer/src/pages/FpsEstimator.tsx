@@ -4,8 +4,10 @@ import { GAME_PROFILES } from '@data/gameProfiles'
 import { getGameSettings } from '@data/gameSettings'
 import { CATEGORY_COLORS, type FpsImpact } from '@data/schema'
 import { useScan } from '@renderer/hooks/useScan'
+import { useAccount } from '@renderer/hooks/useAccount'
+import { useAppNavigation } from '@renderer/context/AppNavigation'
 import Gauge from '@renderer/components/Gauge'
-import { IconGamepad, IconBolt, IconInfo } from '@renderer/components/icons'
+import { IconGamepad, IconBolt, IconInfo, IconShield } from '@renderer/components/icons'
 
 const IMPACT_SCORE: Record<FpsImpact, number> = { none: 0, low: 1, medium: 2, high: 3 }
 // A shared ceiling across every profile, not a per-profile-normalized percentage. Normalizing by
@@ -39,6 +41,15 @@ function tierFor(score: number): Tier {
 
 export default function FpsEstimator(): React.JSX.Element {
   const { report, scanning, runScan } = useScan()
+  const { session, hasLicense, loading: accountLoading, loadingTickets } = useAccount()
+  const navigate = useAppNavigation()
+  // This page is one of the few unlicensed accounts can see at all (UNLICENSED_ALLOWED_KEYS), so
+  // the specific tweak names below have to stay locked — otherwise it's a free how-to-DIY list for
+  // anyone who never buys. The gauge/tier summary above stays visible; that's the teaser.
+  const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
+  // Not just !accountLoading — see the matching comment in Optimizations.tsx: a signed-in
+  // customer's tickets can still be retrying against a cold Render backend.
+  const isLocked = !accountLoading && !loadingTickets && !canApply
   const [profileId, setProfileId] = useState(GAME_PROFILES[0].id)
 
   useEffect(() => {
@@ -141,7 +152,31 @@ export default function FpsEstimator(): React.JSX.Element {
           {availableTweaks.length > 0 ? (
             <div className="mt-5 border-t border-white/10 pt-4">
               <p className="text-xs text-white/40">Based on {availableTweaks.length} not-yet-applied tweak(s):</p>
-              <ul className="mt-2 flex flex-col gap-1.5 text-sm text-white/70">
+
+              {isLocked && (
+                <div className="ft-glass mt-3 flex flex-wrap items-center justify-between gap-3 border-ft-orange/40 bg-ft-orange/[0.06] p-4">
+                  <div className="flex items-center gap-3">
+                    <IconShield className="h-5 w-5 shrink-0 text-ft-orange" />
+                    <p className="text-sm text-white/60">
+                      Unlock a plan to see exactly which tweaks these are.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('billing')}
+                    className="ft-heading ft-btn-glow shrink-0 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
+                  >
+                    Unlock in Billing
+                  </button>
+                </div>
+              )}
+
+              <ul
+                className={`mt-2 flex flex-col gap-1.5 text-sm text-white/70 transition-[filter] duration-200 ${
+                  isLocked ? 'pointer-events-none select-none blur-sm' : ''
+                }`}
+                aria-hidden={isLocked}
+              >
                 {availableTweaks.map((t) => (
                   <li key={t.id} className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
