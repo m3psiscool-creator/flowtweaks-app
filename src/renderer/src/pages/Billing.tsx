@@ -57,6 +57,7 @@ export default function Billing(): React.JSX.Element {
 
   const [accessCode, setAccessCode] = useState('')
   const [redeemMessage, setRedeemMessage] = useState<string | null>(null)
+  const [referralCode, setReferralCode] = useState('')
 
   if (loading) {
     return (
@@ -103,6 +104,20 @@ export default function Billing(): React.JSX.Element {
             Buy a plan to unlock every tweak on this PC, or redeem an access code if you have one.
           </p>
 
+          <div className="mt-4 flex flex-col gap-1.5">
+            <label className="text-xs uppercase tracking-wide text-white/40">
+              Referral code <span className="normal-case text-white/25">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. AB12CD"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              maxLength={8}
+              className="w-full max-w-xs rounded border border-white/15 bg-black/40 px-3 py-2 text-sm uppercase tracking-widest text-white"
+            />
+          </div>
+
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {PLANS.map((plan) => (
               <div key={plan.id} className="ft-glass-solid flex flex-col p-4">
@@ -111,7 +126,7 @@ export default function Billing(): React.JSX.Element {
                 <span className="mt-1 text-xs text-white/50">{plan.blurb}</span>
                 <button
                   type="button"
-                  onClick={() => buyPlan(plan.id)}
+                  onClick={() => buyPlan(plan.id, referralCode)}
                   disabled={busy}
                   className="ft-heading ft-btn-glow mt-4 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
                 >

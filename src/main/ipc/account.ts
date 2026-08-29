@@ -70,13 +70,13 @@ export function registerAccountIpcHandlers(): void {
   // server-side, and they come back to the app and hit Refresh (or just reopen Account).
   ipcMain.handle(
     'account:buyPlan',
-    async (_event, plan: AppPurchasablePlan): Promise<CheckoutResult> => {
+    async (_event, plan: AppPurchasablePlan, referralCode?: string): Promise<CheckoutResult> => {
       const session = await loadSession()
       if (!session || session.user.role !== 'customer' || !session.user.email) {
         return { ok: false, error: 'Sign in first.' }
       }
       try {
-        const url = await backend.createCheckoutSession(session.user.email, plan)
+        const url = await backend.createCheckoutSession(session.user.email, plan, referralCode)
         await shell.openExternal(url)
         return { ok: true }
       } catch (err) {

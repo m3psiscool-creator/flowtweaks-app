@@ -1,246 +1,528 @@
-# Flow Tweaks Desktop App
+# Flow Tweaks — Referral System + Coupon Codes
 
-Read this fully before writing any code. Ask questions when something is ambiguous
-instead of assuming. Explain what you're doing in plain language — I can follow
-instructions but I'm not deep on Electron internals.
+Read this fully before writing any code. Ask questions when something is
+ambiguous instead of assuming. Explain what you're doing in plain language —
+I can follow instructions but I'm not deep on payment infrastructure.
 
 ---
 
 ## 1. WHO I AM AND WHAT THIS BUSINESS IS
 
 I run Flow Tweaks (flowtweaks.com), a PC and console optimization service for
-competitive Fortnite and FPS players. I'm a solo operator, sole proprietorship,
+competitive Fortnite and FPS players. Solo operator, sole proprietorship,
 based in Missouri. In gaming circles I go by "maps".
 
-Today the service works like this:
+**How the business actually runs:**
 
-- Customer buys a tier on the website (Console $6.99, PC $11.99, Both $14.99 —
-  one-time payments, no subscriptions)
-- They join my Discord
-- I remote into their PC and manually apply optimizations — registry edits,
-  debloating, power plan changes, disabling startup programs and services,
-  game config files, temp file cleanup, network adapter settings
+- Customer buys a tier on the website — one-time payments, no subscriptions
+- Everything after the sale happens in Discord: support, delivery, tickets
+- Historically I remote in and tweak the PC by hand, about an hour per sale
+- A Windows desktop app now handles the repeatable parts automatically
 - 27+ verified five-star reviews so far
 
-The bottleneck is obvious: every sale costs me an hour of my own time. This app
-is how the business stops being hourly labor.
+**Pricing:**
 
-## 2. WHAT THIS APP IS
+| id        | name              | price   | cents | net after Stripe |
+|-----------|-------------------|---------|-------|------------------|
+| `console` | Console           | $5.00   | 500   | ~$4.56           |
+| `pc`      | PC                | $15.00  | 1500  | ~$14.27          |
 
-A Windows desktop app that customers download and run on their own PC. It applies
-the same optimizations I currently apply by hand.
+These IDs are referenced across the existing codebase. Do not change them. The
+`both` (PC+Console combo) plan has been **retired** — it's no longer sellable
+(see `frontend/src/components/site/Pricing.jsx` and `PLAN_PRICES` in
+`backend/server.py`) and does not appear anywhere in this spec below. Net
+figures are approximate (2.9% + $0.30 standard Stripe card rate).
 
-**Critical distinction: this is NOT a remote access tool.** No HelpWire, no AnyDesk,
-no screen sharing, no remote control. The customer's PC is never accessed by me.
-The app runs locally on their machine and does the work itself. Any language,
-naming, or architecture that implies remote control is wrong.
+**Things about this business that should shape your decisions:**
 
-### What the app can and can't replace
+- **I am the entire operations team.** Anything that needs a human in the
+  loop needs *me*, and I'm not available on a schedule. Prefer designs that
+  fail safe and wait for me over designs that act automatically and might be
+  wrong.
+- **Volume is small right now.** Dozens of sales, not thousands. A manual
+  button in the staff dashboard is a perfectly good v1. Do not build queue
+  infrastructure or background job systems for a problem I don't have yet.
+- **Discord is the customer relationship**, not email. Referrers are
+  identified by Discord handle. Notifications go to a Discord webhook.
+- **My margins are thin in absolute terms.** A $3 mistake per referral
+  matters at $6.99 a sale. Every reward amount in this spec was calculated
+  against the net figures above.
 
-It should handle the repeatable, testable, safe parts of what I do manually:
-registry changes, debloating, power settings, startup programs, Windows services,
-game config files, temp file cleanup.
+**Payment setup — read before building cash payouts:**
 
-It will NOT replace 100% of manual tweaking. When I work on a PC by hand I can
-inspect it and make judgment calls. Software can only apply changes that were
-programmed and tested for that specific hardware and Windows version. Unusual
-problems — driver issues, BIOS settings, overheating, corrupted Windows files,
-unsupported hardware — still need me.
+The Stripe account holder is a parent, and payouts route to CashApp. Cash
+referral payouts use Stripe Connect, which makes us a *platform* sending
+money to third parties — a different arrangement from simply accepting
+payments. **Confirm with Stripe that Connect is permitted on this account
+before writing any payout code.** If it isn't, the tweaks-only path still
+works and ships independently.
 
-The goal is not to automate every possible tweak. The goal is to automate the
-majority of useful tweaks **safely**, verify they actually worked, and let the
-customer undo them.
+---
 
-### How it makes money
+## 2. WHAT WE ARE BUILDING
 
-The app is free to download. The tweak packages inside it are locked. When a
-customer pays, the package is added to their account and unlocks automatically
-inside the app. They never download a .reg file or a script separately. They
-press Scan, choose their package, and the app applies every compatible tweak
-directly.
+### A. Referral program with two reward types
+
+Any customer can request a referral code. When someone else buys using that
+code, the referrer earns a reward. The referrer chooses how they're paid.
+
+**Reward type: TWEAKS** — free services. Every qualified referral is worth
+**1 point**, regardless of which plan the referred person bought.
+
+| Redemption           | Points |
+|----------------------|--------|
+| Free Console tweak   | 1      |
+| Free PC tweak        | 3      |
+
+**Reward type: CASH** — real money to their bank via Stripe Connect. Amount
+depends on what the referred person bought:
+
+| Referred purchase | Cash reward |
+|-------------------|-------------|
+| `console`         | $1.00       |
+| `pc`              | $3.00       |
+
+**These are two separate currencies.** Cash in cents, tweaks in whole
+points. They never convert between each other in either direction.
+
+The referrer sets `reward_type` on their account and can change it any time.
+**The type is locked in per referral at the moment it is recorded** —
+changing the preference affects future referrals only. Without this someone
+banks fifty referrals as points, flips to cash, and claims real money on all
+of them retroactively.
+
+### B. Coupon codes
+
+Standard promo codes (percentage or fixed amount off) created and managed in
+the Stripe dashboard.
+
+**Referral codes and coupon codes are different things and must not be
+conflated:**
+- A **coupon code** discounts the current purchase for the buyer
+- A **referral code** rewards a third party and discounts nothing
+
+Both are enterable at checkout, independently.
+
+---
 
 ## 3. WHAT I ALREADY HAVE (do not rebuild these)
 
-- **Website**: React + Tailwind + Framer Motion, deployed on Vercel, repo
-  `m3psiscool-creator/flowoptimizations`. Domain flowtweaks.com via IONOS.
-- **Payments**: Stripe checkout via Vercel serverless functions
-  (`create-checkout.js`, `stripe-webhook.js`, `order-status.js`)
-- **Backend**: Node backend on Render at `flowtweaks-backend.onrender.com`,
-  MongoDB Atlas for data, Cloudinary for file storage
-- **Existing web features**: customer chat/ticketing system, staff dashboard at
-  `/staff/login`, FPS calculator, scheduling system
-- **FlowTweaks.bat**: a 17-step batch script I already wrote and use when doing
-  manual sessions. It creates a restore point, then walks through the tweaks with
-  live progress output and a SKIP option at each step. **This script is the source
-  of truth for what tweaks I actually apply.** I'll paste it into the repo — read
-  it before designing the tweak schema, because the schema has to be able to
-  represent everything it does.
+- **Website**: React + Tailwind + Framer Motion on Vercel, repo
+  `m3psiscool-creator/flowoptimizations`. Vercel root directory is
+  `frontend`.
+- **Payments**: Stripe Checkout via Vercel serverless functions in
+  `frontend/api/` — `create-checkout.js`, `stripe-webhook.js`,
+  `order-status.js`. Live and working.
+- **Backend**: `backend/` in the same repo, deployed as the Render service
+  `flowtweaks-backend`. MongoDB Atlas for data. JWT auth already exists for
+  the staff dashboard.
+  > **Confirm the backend language before writing endpoints.** My notes say
+  > Python FastAPI (`server.py`); other documentation says Node. Check the
+  > repo and tell me which is correct rather than guessing.
+- **Pages**: `Landing.jsx`, `Success.jsx`, `Terms.jsx`, `StaffLogin.jsx`,
+  `StaffDashboard.jsx`
+- **Components**: `frontend/src/components/site/` — `Nav`, `Hero`, `Stats`,
+  `Pricing`, `Reviews`, `FPSCalculator`, `HowItWorks`, `FAQ`, `Footer`
+- **Desktop app**: separate private repo `m3psiscool-creator/flowtweaks-app`.
+  Electron + React + Tailwind + Vite. Free to download; tweak packages are
+  locked until purchased, then unlock automatically in the customer's
+  account. It authenticates against the same Render backend.
+- **Existing env vars**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+  `DISCORD_WEBHOOK_URL`
+- **UptimeRobot** pings the backend every 5 minutes to stop Render sleeping.
+  A cron that hits our endpoints can piggyback on the same approach.
 
-When we get to accounts and licensing, the app authenticates against the existing
-Render backend. Do not invent a second backend or a second user database.
+Do not invent a second backend or a second user database.
 
-## 4. BRAND
+---
+
+## 4. HOW A FREE TWEAK IS ACTUALLY DELIVERED
+
+This is the piece most likely to be built wrong, so read it carefully.
+
+Because the desktop app now delivers the service, redeeming points should
+**unlock the package on the referrer's account**, exactly as a purchase
+does. There is no payment, no Stripe Checkout session, and no manual
+session required.
+
+```
+POST /api/referral/redeem
+  body: { email, plan_id }
+  - POINT_COSTS = { console: 1, pc: 3 }
+  - REJECT if points_balance < cost
+  - deduct points and grant the package entitlement in ONE transaction
+  - use the SAME entitlement-granting code path the Stripe webhook uses
+    after a paid order — do not write a parallel one
+  - record a tweak_redemptions row
+  - POST to DISCORD_WEBHOOK_URL with a visibly distinct embed
+    (different colour and title from a paid order) so I can tell
+    redemptions from sales at a glance
+  - return { plan_id, points_remaining }
+```
+
+**Find the existing entitlement code before writing this.** If granting
+access happens in the Stripe webhook, extract it into a shared function that
+both paths call. Two code paths that grant access will drift apart and one
+of them will end up wrong.
+
+If a customer's entitlement needs manual work for any reason, the Discord
+post is what tells me. Do not build an automated fallback.
+
+---
+
+## 5. ECONOMICS — do not change these numbers without recalculating
+
+The tweaks path is deliberately generous. One referral of any kind earns a
+free console tweak. Since the app delivers it, the marginal cost to me is
+close to zero — which is exactly why this rate is affordable now and would
+not have been when every tweak cost me an hour.
+
+Guardrails:
+- Never lower the point costs below section 2
+- Never let a cash reward exceed 40% of net revenue on any plan
+- The staff dashboard must show total cash paid and total redemptions so I
+  can watch this and adjust
+
+---
+
+## 6. HARD RULES
+
+1. **Never collect bank account or routing numbers.** Stripe Connect Express
+   hosts onboarding and stores bank details on Stripe's servers. We store
+   only the returned `acct_xxx` ID. No exceptions, no "just for now".
+2. **14-day holding period before any reward lands.** Refunds and
+   chargebacks arrive after the sale. Cash is unrecoverable once
+   transferred and a redeemed tweak is unrecoverable once used.
+3. **Prices and rewards are server-side only.** Never accept an amount,
+   plan, balance or point total from the client.
+4. **Idempotency on every money path.** Stripe retries webhooks. A
+   double-submitted redeem must not grant two packages.
+5. **All money in cents as integers. Points as whole integers.** Never
+   floats for either.
+6. **An invalid referral code must never block a purchase.** Ignore it
+   silently and let the sale complete.
+7. **Log every change and every failure with timestamps**, including who
+   made any manual adjustment.
+
+---
+
+## 7. DATA MODEL
+
+```
+referrers
+  id                  PK
+  discord_handle      str, unique, required
+  email               str, unique, required
+  code                str, unique, uppercase, 6-8 chars
+  reward_type         enum: tweaks | cash    (default tweaks)
+  points_balance      int, default 0
+  cash_balance        int (cents), default 0
+  lifetime_points     int, default 0
+  lifetime_cash       int (cents), default 0
+  stripe_connect_id   str, nullable
+  payouts_enabled     bool, default false
+  status              enum: active | suspended
+  created_at          datetime
+
+referral_events
+  id                  PK
+  referrer_id         FK -> referrers.id
+  referrer_code       str  (denormalized for auditing)
+  stripe_session_id   str, UNIQUE          <-- idempotency guard
+  order_id            str  (the referred purchase)
+  buyer_email         str
+  plan_id             str  (console | pc)
+  reward_type         enum: tweaks | cash   (LOCKED at record time)
+  cash_amount         int (cents), 0 if tweaks
+  points_amount       int, 0 if cash
+  status              enum: pending | qualified | voided
+  created_at          datetime
+  qualified_at        datetime, nullable
+
+tweak_redemptions
+  id                  PK
+  referrer_id         FK
+  plan_id             str
+  points_spent        int
+  status              enum: granted | needs_review
+  created_at          datetime
+
+cash_payouts
+  id                  PK
+  referrer_id         FK
+  amount              int (cents)
+  stripe_transfer_id  str, nullable
+  status              enum: pending | sent | failed
+  failure_reason      str, nullable
+  created_at          datetime
+  sent_at             datetime, nullable
+```
+
+---
+
+## 8. ENDPOINTS
+
+### Public
+
+```
+POST /api/referral/signup
+  body: { discord_handle, email, reward_type }
+  - reject duplicates
+  - generate unique code, uppercase alphanumeric, exclude 0/O/1/I/L
+  - return { code, reward_type }
+
+GET /api/referral/validate/{code}
+  - returns { valid: bool } only — never leak the referrer's identity
+
+GET /api/referral/balance?email={email}
+  - { code, reward_type, points_balance, cash_balance, pending_points,
+      pending_cash, referral_count, lifetime_points, lifetime_cash,
+      payouts_enabled, needs_connect_onboarding,
+      redeemable: { console, pc } }
+  - `code` added beyond the original spec — Referral.jsx's balance view needs it for the
+    copy-to-clipboard code/share-link, and signup only returns it once, at signup time
+  - rate limit; unauthenticated email lookup
+
+POST /api/referral/reward-type
+  - changes preference for FUTURE referrals only
+
+POST /api/referral/redeem          (see section 4)
+
+POST /api/referral/connect/onboard
+  - creates Stripe Express account if needed, returns onboarding_url
+
+GET  /api/referral/connect/return
+  - re-fetch account, set payouts_enabled from account.payouts_enabled
+```
+
+### Internal (called by Vercel functions, `X-Internal-Secret` header)
+
+```
+POST /api/referral/record
+  body: { referrer_code, stripe_session_id, order_id, buyer_email,
+          plan_id, amount_paid }
+  - REJECT self-referral (buyer_email == referrer email)
+  - REJECT if buyer_email already counted (first purchase only)
+  - REJECT if stripe_session_id already recorded
+  - snapshot referrer.reward_type onto the event
+  - cash: console=100, pc=300 | tweaks: points_amount=1
+  - status=pending
+
+POST /api/referral/qualify         daily cron
+  - pending -> qualified where older than REFERRAL_HOLD_DAYS
+  - add to the balance matching the event's LOCKED reward_type
+
+POST /api/referral/void
+  body: { stripe_session_id, reason }
+  - called on charge.refunded and charge.dispute.created
+  - status=voided; subtract if already qualified; floor at 0
+  - if it would go negative, floor and flag the referrer for review
+
+POST /api/referral/payout-run      monthly cron
+  - where cash_balance >= PAYOUT_MINIMUM_CENTS and payouts_enabled
+  - stripe.transfers.create({ amount, currency:'usd',
+      destination: stripe_connect_id })
+  - success: zero balance, store transfer id
+  - failure: record reason, LEAVE the balance intact
+  - must be idempotent — never double-send on rerun
+```
+
+### Staff (behind existing JWT auth)
+
+```
+GET  /api/staff/referrals            filter by status and type
+GET  /api/staff/referrers            both balances
+GET  /api/staff/redemptions          free tweaks granted
+GET  /api/staff/payouts              payout history
+GET  /api/staff/referral-summary     cash paid, redemptions, totals
+POST /api/staff/referrer/{id}/suspend
+POST /api/staff/referrer/{id}/adjust manual adjustment + required reason
+POST /api/staff/payout/{id}/retry
+```
+
+---
+
+## 9. CASH PAYOUT RULES
+
+- **Minimum $15.00.** Below that the balance accumulates. Do not send $1
+  transfers.
+- **Monthly, on the 1st.** State this publicly.
+- **No Connect account, no payout.** Balance sits until they onboard. Show
+  a clear prompt.
+- Enable Stripe's 1099 filing when configuring Connect. At these rates
+  hitting $600 needs ~200 referrals, so it's unlikely — configure it now
+  rather than discovering it in January.
+
+---
+
+## 10. CHECKOUT CHANGES
+
+### `frontend/api/create-checkout.js`
+- accept `{ service, referral_code, buyer_email }`
+- validate the code against the backend; if invalid, ignore silently
+- store `referral_code` in session `metadata`
+- add `allow_promotion_codes: true` — this gives a promo field inside
+  Stripe Checkout, so coupons are managed entirely in the Stripe dashboard
+  under Products → Coupons → Promotion codes. No custom coupon code needed.
+
+Free tweaks do **not** go through Checkout. Do not build a credit-discount
+path here.
+
+### `frontend/api/stripe-webhook.js`
+- keep the existing Discord post; add the referral code to the embed
+- if `metadata.referral_code` present, POST to `/api/referral/record`
+- add `charge.refunded` and `charge.dispute.created` → `/api/referral/void`
+- **do not remove `bodyParser: false`** — the raw body is required for
+  signature verification
+
+---
+
+## 11. FRONTEND
+
+### New page `frontend/src/pages/Referral.jsx` at `/referral`
+- Plain-language explanation with the reward table
+- Signup: Discord handle, email, reward type toggle with the tradeoff
+  stated — tweaks are instant with no setup but can't be cashed out; cash
+  needs a Stripe setup, $15 minimum, paid monthly
+- Balance view: points, cash, pending, referral count, lifetime totals
+- Redeem panel — a button per affordable plan, confirming the package was
+  unlocked and telling them to open the desktop app
+- "Set up payouts" button when `needs_connect_onboarding`
+- Reward type switch, with a note that it applies to future referrals only
+- Copy-to-clipboard for the code and share link `flowtweaks.com/?ref=CODE`
+
+### `Pricing.jsx`
+- Optional "Referral code" input above the buy buttons, live validation
+- Pass the code to `create-checkout`
+- No coupon input here — `allow_promotion_codes` handles it
+
+### Landing page
+- Read `?ref=CODE` from the URL, store in `localStorage` for 30 days,
+  prefill the referral input
+
+### `App.js`
+- Add the `/referral` route
+
+### `StaffDashboard.jsx`
+- Referrals tab, Redemptions tab, Payouts tab
+- Summary card: total cash paid, total redemptions
+
+---
+
+## 12. ANTI-ABUSE
+
+- Self-referral blocked by email match
+- One reward per buyer email ever — first purchase only, not repeats
+- Codes case-insensitive on input, stored uppercase
+- Rate limit signup, balance, reward-type and redeem by IP
+- Suspended referrers earn nothing, their code fails validation, and they
+  cannot redeem
+- Voided referrals subtract if already granted
+- Reward type snapshotted per event, never retroactively changed
+- Redemption transactional — a double-submit must not grant twice
+
+Do not attempt IP-based fraud detection. It produces false positives on
+shared networks and households, which is common in this customer base.
+
+---
+
+## 13. ENV VARS
+
+```
+INTERNAL_API_SECRET      shared secret, Vercel functions <-> backend
+BACKEND_URL              https://flowtweaks-backend.onrender.com
+FRONTEND_URL             https://flowtweaks.com
+REFERRAL_HOLD_DAYS       14
+PAYOUT_MINIMUM_CENTS     1500
+```
+
+Vercel needs `INTERNAL_API_SECRET`, `BACKEND_URL`, `FRONTEND_URL` on
+Production and Preview. Render needs `INTERNAL_API_SECRET`,
+`STRIPE_SECRET_KEY`, `DISCORD_WEBHOOK_URL`, `FRONTEND_URL`,
+`REFERRAL_HOLD_DAYS`, `PAYOUT_MINIMUM_CENTS`.
+
+**Env changes on Vercel require a manual redeploy to take effect.** This has
+bitten me before.
+
+Never commit secrets. Never log a full secret or Stripe key.
+
+---
+
+## 14. HOW I WANT YOU TO WORK
+
+Work in phases and check in between them. Tell me what you built, what's
+next, and anything you're unsure about.
+
+**Phase 1 — design, before code.** Confirm the backend language, find the
+existing entitlement-granting code, and propose how `/api/referral/redeem`
+reuses it. Wait for my approval.
+
+**Phase 2** — models and migrations
+**Phase 3** — signup, code generation, validation, reward-type
+**Phase 4** — `/api/referral/record` with all anti-abuse rules
+**Phase 5** — wire `stripe-webhook.js`; refund and dispute handlers
+**Phase 6** — qualification cron
+**Phase 7** — redeem endpoint, transactional
+**Phase 8** — `Referral.jsx`, tweaks only
+**Phase 9** — referral input in `Pricing.jsx`, `?ref=` capture
+**Phase 10** — `allow_promotion_codes` for coupons
+**Phase 11** — staff dashboard tabs
+
+Stop there. Run tweaks-only in production for a few weeks before we discuss
+cash. Stripe Connect and the payout cron move real money and are where
+mistakes are expensive and irreversible — and Connect needs confirming with
+Stripe first regardless.
+
+---
+
+## 15. TESTING
+
+Stripe test mode throughout. Forward webhooks with
+`stripe listen --forward-to localhost:3000/api/stripe-webhook`.
+
+Must pass:
+- Referral gives 1 point when reward_type=tweaks, on every plan
+- Referral gives the right cash when reward_type=cash, on every plan
+- Duplicate webhook delivery rewards once
+- Self-referral rejected
+- Repeat purchase by the same buyer does not reward again
+- Invalid code does not block the purchase
+- Refund voids a pending referral
+- Refund voids a qualified referral and subtracts
+- Neither balance goes negative
+- Redeem with exactly enough points grants the package
+- Redeem with insufficient points is rejected
+- Double-submitted redeem grants once
+- Redemption posts a Discord embed visibly distinct from a sale
+- Changing reward type leaves existing events untouched
+- Payout run skips below-minimum and non-onboarded referrers
+- Payout run is idempotent on rerun
+- Failed transfer leaves the balance intact
+
+---
+
+## 16. BRAND AND CONVENTIONS
 
 - Colors: black `#0d0d0d`, orange `#FF5500`, white
-- Fonts: Orbitron and Bebas Neue, heavy all-caps styling
-- Tone: competitive gaming, sharp, no corporate softness
+- Fonts: Orbitron and Bebas Neue, heavy all-caps
+- Tone: competitive gaming, sharp, no corporate softness. The referral page
+  should feel like the same product as the rest of the site.
+- Functional React components; named exports for `components/site/*`,
+  default exports for pages; Tailwind classes inline
+- Vercel functions are ESM (`export default async function handler`)
+- **Keep JSX simple.** Avoid deeply nested multi-line tags — past edits
+  through the GitHub web editor have silently dropped opening tags and
+  broken builds.
 
-The desktop app should feel like the same product as the website.
+---
 
-## 5. STACK
+## 17. PUBLIC TERMS TO WRITE
 
-Electron + React + Tailwind + Vite.
-
-I chose Electron over Tauri because I already know React and Tailwind from the
-website, and I need to iterate fast. If you think a specific piece is better
-handled by a native helper (PowerShell scripts, a small C# service, etc.), say so
-and explain the tradeoff rather than silently doing it.
-
-## 6. WHAT THE APP CONTAINS
-
-### Home
-Computer name, Windows version, CPU, GPU, RAM, storage, live CPU and memory usage,
-optimization status, last optimization date.
-
-### Scan
-Examines the PC and determines:
-- Which tweaks are compatible with this hardware and Windows version
-- Which settings are already active
-- Which changes require administrator permission
-- Which changes may conflict with the hardware or Windows version
-
-### Optimizations
-Tweaks grouped into understandable categories:
-- FPS and latency
-- Windows performance
-- Network
-- GPU
-- Background processes
-- Startup programs
-- Storage cleanup
-- Game-specific configurations
-
-Every single tweak must display:
-- What it changes
-- Why it may help
-- Risk level
-- Whether a restart is required
-- Whether it can be reverted
-- Its current state on this PC
-
-### Game profiles
-Fortnite competitive, Valorant competitive, Counter-Strike 2, Call of Duty,
-general gaming, streaming and gaming, low-end computer.
-
-A profile applies several compatible tweaks together as one action.
-
-### Boost mode
-An optional tiny background service. The full dashboard does NOT stay open while
-someone games — they open it, pick a profile, apply, close it. Most tweaks are
-Windows settings that persist without the app running. Boost mode is the only
-resident piece.
-
-When a supported game starts:
-1. Pause selected background programs
-2. Apply temporary performance settings
-3. Start monitoring performance
-4. Restore the previous settings and processes when the game closes
-
-Similar to Razer Cortex's apply-and-restore behavior.
-
-### Restore and history — THE MOST IMPORTANT PART
-Before changing anything on the computer:
-- Create a Windows restore point
-- Save the previous value of every setting being changed
-- Record every change to a local log
-
-The app must support:
-- One-click full rollback
-- Reverting individual tweaks
-- Detecting when a tweak failed
-
-If restore isn't bulletproof, nothing else matters. A customer who can't undo a
-change is a refund and a bad review.
-
-### Diagnostics
-- Export a diagnostic report
-- View optimization history
-- View failed changes
-- Generate a support code
-- Open a Discord support ticket
-- Restore default Windows settings
-
-### Account
-Login, license status, plan, activated devices, remove an old device, download
-updates, referral status, support history. Include a staff-only view behind a
-role check so I can read customer diagnostic reports.
-
-## 7. THE RESULTS REPORT
-
-After a run, every tweak is categorized as one of:
-- Applied successfully
-- Already enabled
-- Skipped because incompatible
-- Failed
-- Needs manual review
-
-The customer sees a summary like:
-
-```
-22 tweaks applied successfully
-3 were already enabled
-2 skipped — not compatible
-1 needs manual review
-```
-
-This is how I know what still needs human attention. If a customer needs help, the
-app generates a support code / diagnostic report. They send it to me and I can see
-exactly what was applied, what was skipped, and what's left — without guessing or
-redoing work.
-
-## 8. HARD RULES
-
-1. **Check before applying.** Every tweak is validated against that specific PC
-   before it runs. Never blind-apply a whole package. Every PC is different and
-   applying identical tweaks to everyone is not safe.
-2. **Never promise a specific FPS number.** Results depend on hardware and existing
-   configuration. No "+40 FPS guaranteed" anywhere in the UI or copy.
-3. **Tweak definitions live in data files** (JSON or TS), not hardcoded in
-   components. I need to add and edit tweaks without touching UI code.
-4. **Request admin elevation properly** and fail gracefully when it's denied —
-   show which tweaks are unavailable rather than crashing or silently skipping.
-5. **Restore point first, always.** No code path applies a change before the
-   restore point and previous-value snapshot exist.
-6. **Log everything.** Every change, every failure, with timestamps.
-
-## 9. HOW I WANT YOU TO WORK
-
-Do not build the whole app at once. Work in phases and check in with me between
-them.
-
-**Phase 1 — design, before code**
-Propose the folder structure and the tweak definition schema. Explain every field
-in the schema in plain language and why it's there. Wait for my approval.
-
-**Phase 2 — scaffold**
-Set up Electron + React + Tailwind + Vite so it runs with `npm run dev`. Brand
-styling applied. No tweak logic yet.
-
-**Phase 3 — Home screen**
-Real system detection only: specs, live usage. Nothing is modified on the PC yet.
-
-**Phase 4 — Scan**
-Detection of tweak state and compatibility. Read-only. Still nothing modified.
-
-**Phase 5 — Restore infrastructure**
-Restore points, value snapshots, change log, rollback. Built and tested BEFORE any
-tweak can be applied.
-
-**Phase 6 — Applying tweaks**
-Start with the lowest-risk category only.
-
-Later phases (do not start these without asking): account/licensing against the
-Render backend, Boost mode, staff view, auto-updates, code signing and installer.
-
-Between phases, tell me what you built, what you'd do next, and anything you're
-unsure about.
+Add to `Terms.jsx`:
+- What qualifies as a referral
+- The 14-day holding period
+- Point costs for each free tweak
+- The $15 cash minimum and monthly schedule
+- That points cannot be converted to cash or withdrawn
+- That reward type applies to future referrals only
+- That we may void fraudulent referrals or end the program

@@ -20,7 +20,7 @@ interface UseAccountResult {
   staffLogin: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   refreshTickets: () => void
-  buyPlan: (plan: AppPurchasablePlan) => Promise<boolean>
+  buyPlan: (plan: AppPurchasablePlan, referralCode?: string) => Promise<boolean>
   redeemCode: (code: string) => Promise<boolean>
 }
 
@@ -114,11 +114,11 @@ export function useAccount(): UseAccountResult {
   }, [session, loadTickets])
 
   const buyPlan = useCallback(
-    async (plan: AppPurchasablePlan) => {
+    async (plan: AppPurchasablePlan, referralCode?: string) => {
       setError(null)
       setBusy(true)
       try {
-        const result = await window.api.account.buyPlan(plan)
+        const result = await window.api.account.buyPlan(plan, referralCode)
         if (!result.ok) {
           setError(result.error ?? 'Could not start checkout.')
           return false

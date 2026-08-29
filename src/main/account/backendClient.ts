@@ -82,11 +82,21 @@ export function redeemAccessCode(token: string, code: string): Promise<RawTicket
  * locks Stripe's checkout email field to it, so the payment always matches the account the
  * webhook will attach the resulting ticket to.
  */
-export async function createCheckoutSession(email: string, plan: AppPurchasablePlan): Promise<string> {
+export async function createCheckoutSession(
+  email: string,
+  plan: AppPurchasablePlan,
+  referralCode?: string
+): Promise<string> {
   const res = await fetch(`${WEBSITE_API_BASE}/create-checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ service: plan, email })
+    // create-checkout.js validates this against the backend itself and silently drops it if
+    // invalid — nothing here needs to pre-validate, same as the website's Pricing page.
+    body: JSON.stringify({
+      service: plan,
+      email,
+      ...(referralCode?.trim() ? { referral_code: referralCode.trim() } : {})
+    })
   })
   if (!res.ok) throw new Error(`Checkout request failed (${res.status})`)
   const data = (await res.json()) as { url?: string; error?: string }

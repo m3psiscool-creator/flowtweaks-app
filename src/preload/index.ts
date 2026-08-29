@@ -91,7 +91,8 @@ const api = {
     logout: (): Promise<void> => ipcRenderer.invoke('account:logout'),
     getMyTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getMyTickets'),
     getStaffTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getStaffTickets'),
-    buyPlan: (plan: AppPurchasablePlan): Promise<CheckoutResult> => ipcRenderer.invoke('account:buyPlan', plan),
+    buyPlan: (plan: AppPurchasablePlan, referralCode?: string): Promise<CheckoutResult> =>
+      ipcRenderer.invoke('account:buyPlan', plan, referralCode),
     redeemCode: (code: string): Promise<RedeemCodeResult> => ipcRenderer.invoke('account:redeemCode', code)
   }
 }
