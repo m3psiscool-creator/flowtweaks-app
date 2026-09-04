@@ -341,3 +341,165 @@ export interface RedeemCodeResult {
   ticket?: AccountTicket
   error?: string
 }
+
+// --- Free Scan (see CLAUDE-free-scan.md) ---
+// Everything here is read-only detection, gathered specifically for the free scan flow rather than
+// folded into SystemSpecs/getSystemSpecs — that function is called on every page that shows specs
+// (Home, Optimizations, FreeScan) and these fields are either slower to gather (a PowerShell CIM
+// query for the GPU driver) or just not needed anywhere else. Keeping them separate means the free
+// scan can be as thorough as it wants without slowing down pages that don't need any of this.
+
+export type StorageType = 'ssd' | 'hdd' | 'mixed' | 'unknown'
+
+export interface GpuDriverInfo {
+  /** Null when no real (non-Microsoft-Basic-Display) video controller could be read. */
+  version: string | null
+  /** ISO date (yyyy-MM-dd) the driver was built, or null if unavailable. */
+  date: string | null
+}
+
+/** Hardware facts Section 3 asks for that aren't part of the general SystemSpecs contract. */
+export interface FreeScanHardwareExtras {
+  motherboard: string
+  storageType: StorageType
+  /** Null if no display reported a refresh rate (e.g. remote desktop session). */
+  refreshRateHz: number | null
+  gpuDriver: GpuDriverInfo
+}
+
+export interface NonEssentialProcessMatch {
+  /** The actual running process name, e.g. "OneDrive.exe". */
+  processName: string
+  /** Plain-language label for display, e.g. "OneDrive". */
+  label: string
+  reason: string
+}
+
+export interface BackgroundProcessesSnapshot {
+  totalProcessCount: number
+  /** Sum of each process's reported CPU% at the moment of the snapshot — a point-in-time read, not an average. */
+  totalCpuPercent: number
+  totalMemoryBytes: number
+  /** Deduplicated by process name — five copies of the same helper count once, per section 4's "23 processes running that don't need to be" framing. */
+  nonEssential: NonEssentialProcessMatch[]
+}
+
+export interface TempCacheSizeReport {
+  /** Bytes across %TEMP% and C:\Windows\Temp — the same two paths the clear-temp-files tweak targets. */
+  tempFolderBytes: number
+  recycleBinBytes: number
+  totalBytes: number
+}
+
+export type InstalledGameConfigState = 'tuned' | 'not-tuned' | 'unknown'
+
+export interface InstalledGameResult {
+  /** Matches a GameProfile id in data/gameProfiles.ts. */
+  gameId: string
+  installed: boolean
+  /**
+   * 'unknown' means we detected the game but don't have a reliable way to read its config for this
+   * title yet (e.g. Valorant/CoD store video settings in formats too fragile to parse safely) —
+   * never guessed, per the "never fabricate" rule.
+   */
+  configState: InstalledGameConfigState
+}
+
+/** Everything Section 3 asks for that scan.ts + systemInfo.ts don't already cover. Combined with a
+ *  regular ScanReport + SystemSpecs by the free scan orchestrator, not a replacement for either. */
+export interface FreeScanExtras {
+  hardware: FreeScanHardwareExtras
+  backgroundProcesses: BackgroundProcessesSnapshot
+  startupItems: StartupItem[]
+  tempCache: TempCacheSizeReport
+  installedGames: InstalledGameResult[]
+  dnsSummary: DnsOverrideInfo | null
+}
+
+/** The full read-only detection pass for the free scan — Phase 2 (detect) only. Baseline
+ *  measurement (Phase 3) and projections (Phase 4) layer on top of this, not into it. */
+export interface FreeScanReport {
+  generatedAt: string
+  specs: SystemSpecs
+  scan: ScanReport
+  extras: FreeScanExtras
+}
+
+// --- Free Scan: baseline measurement (Phase 3) ---
+
+/**
+ * 'unavailable' is the Section 5 last-resort path: WebGL context creation failed (broken/ancient
+ * GPU driver) or the benchmark was aborted before enough frames were sampled. Every FPS field is
+ * null in that case — never a fabricated or estimated number standing in for a real measurement.
+ */
+export type BaselineMethod = 'webgl-benchmark' | 'unavailable'
+
+export interface BaselineMeasurement {
+  id: string
+  createdAt: string
+  method: BaselineMethod
+  avgFps: number | null
+  onePercentLowFps: number | null
+  /** Frames actually sampled after warmup discard — the "sample size" a results screen can show for this specific baseline run. */
+  sampleCount: number
+  /** Why method is 'unavailable' — shown to the customer instead of a number, never swallowed silently. */
+  failureReason?: string
+}
+
+// --- Free Scan: submitting results to the backend (Phase 6) ---
+// Field names are snake_case to match the FastAPI/Pydantic model on flowtweaks-backend exactly —
+// this crosses process AND language boundaries, so keeping the wire shape identical on both sides
+// beats translating field names for no reason.
+
+export interface FreeScanCategorySummary {
+  category: string
+  available_count: number
+  avg_fps_pct_range?: [number, number]
+  low_fps_pct_range?: [number, number]
+  latency_ms_range?: [number, number]
+}
+
+export interface FreeScanSubmission {
+  /** Omitted entirely (not sent as empty string) when the customer skips the email capture. */
+  email?: string
+  cpu_model: string
+  gpu_model: string
+  gpu_vendors: string[]
+  ram_total_bytes: number
+  windows_version: string
+  storage_type?: string
+  baseline_avg_fps?: number
+  baseline_one_percent_low_fps?: number
+  baseline_sample_count?: number
+  total_available: number
+  already_optimal_count: number
+  matched_tier?: string
+  projected_avg_fps_range?: [number, number]
+  projected_low_fps_range?: [number, number]
+  categories: FreeScanCategorySummary[]
+}
+
+export interface FreeScanSubmissionResult {
+  id: string
+}
+
+// --- Free Scan: post-optimization before/after telemetry (Phase 7) ---
+// No email field, unlike FreeScanSubmission — this is anonymous performance telemetry, not a CRM
+// touchpoint. This is the dataset that eventually replaces performanceRanges.json's seeded
+// conservative_estimate numbers with real 'measured' ones (see CLAUDE-free-scan.md section 5).
+
+export interface FreeScanBeforeAfterSubmission {
+  cpu_model: string
+  gpu_model: string
+  ram_total_bytes: number
+  windows_version: string
+  storage_type?: string
+  before_avg_fps: number
+  before_one_percent_low_fps?: number
+  before_sample_count: number
+  after_avg_fps: number
+  after_one_percent_low_fps?: number
+  after_sample_count: number
+  applied_tweak_ids: string[]
+  applied_categories: string[]
+}

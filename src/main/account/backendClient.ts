@@ -1,4 +1,12 @@
-import type { AppPurchasablePlan, RequestCodeResult, TicketPlan, TicketStatus } from '../../shared/ipc-types'
+import type {
+  AppPurchasablePlan,
+  FreeScanBeforeAfterSubmission,
+  FreeScanSubmission,
+  FreeScanSubmissionResult,
+  RequestCodeResult,
+  TicketPlan,
+  TicketStatus
+} from '../../shared/ipc-types'
 
 // The existing website/staff-dashboard backend — CLAUDE.md is explicit that Account must
 // authenticate against this, not a second invented backend or user database.
@@ -102,4 +110,25 @@ export async function createCheckoutSession(
   const data = (await res.json()) as { url?: string; error?: string }
   if (!data.url) throw new Error(data.error ?? 'Checkout did not return a payment URL')
   return data.url
+}
+
+/**
+ * No auth — a free scan visitor has no account yet (see CLAUDE-free-scan.md hard rule: works with
+ * no account and no internet for the local portion, this part is the optional online extra). Same
+ * FastAPI backend, a new public endpoint (rate-limited by IP server-side, same as every other
+ * unauthenticated endpoint there).
+ */
+export function submitFreeScanResults(payload: FreeScanSubmission): Promise<FreeScanSubmissionResult> {
+  return apiFetch('/free-scan/results', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+/**
+ * Phase 7 — post-optimization re-measurement. No email, unlike submitFreeScanResults: this is
+ * anonymous before/after telemetry, the dataset that eventually replaces performanceRanges.json's
+ * seeded estimates with real measured ranges (CLAUDE-free-scan.md section 5).
+ */
+export function submitFreeScanBeforeAfter(
+  payload: FreeScanBeforeAfterSubmission
+): Promise<FreeScanSubmissionResult> {
+  return apiFetch('/free-scan/before-after', { method: 'POST', body: JSON.stringify(payload) })
 }

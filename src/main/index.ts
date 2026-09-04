@@ -8,6 +8,7 @@ import { registerWheelIpcHandlers } from './ipc/wheel'
 import { registerDiagnosticsIpcHandlers } from './ipc/diagnostics'
 import { registerAccountIpcHandlers } from './ipc/account'
 import { registerStartupIpcHandlers } from './ipc/startup'
+import { registerFreeScanIpcHandlers } from './ipc/freeScan'
 import { relaunchElevatedIfNeeded } from './system/selfElevate'
 import { reconcilePendingEntries } from './restore/reconcile'
 import { initAutoUpdater } from './updater'
@@ -78,6 +79,7 @@ app.whenReady().then(async () => {
   registerDiagnosticsIpcHandlers()
   registerAccountIpcHandlers()
   registerStartupIpcHandlers()
+  registerFreeScanIpcHandlers()
 
   // Resolve any change log entries left 'pending' by a crash before the UI can touch them.
   await reconcilePendingEntries()

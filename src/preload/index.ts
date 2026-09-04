@@ -6,12 +6,17 @@ import type {
   ApplyOptions,
   ApplySessionResult,
   AppPurchasablePlan,
+  BaselineMeasurement,
   CheckoutResult,
   CreateRestorePointResult,
   DiagnosticReport,
   DisableSessionResult,
   DnsOverrideInfo,
   ExportReportResult,
+  FreeScanBeforeAfterSubmission,
+  FreeScanReport,
+  FreeScanSubmission,
+  FreeScanSubmissionResult,
   RedeemCodeResult,
   RequestCodeResult,
   RestorePointInfo,
@@ -94,6 +99,18 @@ const api = {
     buyPlan: (plan: AppPurchasablePlan, referralCode?: string): Promise<CheckoutResult> =>
       ipcRenderer.invoke('account:buyPlan', plan, referralCode),
     redeemCode: (code: string): Promise<RedeemCodeResult> => ipcRenderer.invoke('account:redeemCode', code)
+  },
+  freeScan: {
+    run: (): Promise<FreeScanReport> => ipcRenderer.invoke('freeScan:run'),
+    getLatestBaseline: (): Promise<BaselineMeasurement | null> =>
+      ipcRenderer.invoke('freeScan:getLatestBaseline'),
+    recordBaseline: (
+      result: Omit<BaselineMeasurement, 'id' | 'createdAt'>
+    ): Promise<BaselineMeasurement> => ipcRenderer.invoke('freeScan:recordBaseline', result),
+    submitResults: (payload: FreeScanSubmission): Promise<FreeScanSubmissionResult> =>
+      ipcRenderer.invoke('freeScan:submitResults', payload),
+    submitBeforeAfter: (payload: FreeScanBeforeAfterSubmission): Promise<FreeScanSubmissionResult> =>
+      ipcRenderer.invoke('freeScan:submitBeforeAfter', payload)
   }
 }
 

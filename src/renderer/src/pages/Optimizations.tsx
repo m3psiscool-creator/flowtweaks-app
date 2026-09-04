@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ALL_TWEAKS } from '@data/tweaks'
+import { ALL_TWEAKS, getTweakById } from '@data/tweaks'
 import { APPLY_ENABLED_TWEAK_IDS, DISABLE_ENABLED_TWEAK_IDS } from '@data/applyEnabled'
 import { CATEGORY_COLORS, CATEGORY_LABELS, type Category, type RiskLevel } from '@data/schema'
-import type { TweakScanResult } from '@shared/ipc-types'
+import type { BaselineMeasurement, TweakScanResult } from '@shared/ipc-types'
 import { useScan } from '@renderer/hooks/useScan'
 import { useApply } from '@renderer/hooks/useApply'
 import { useDisable } from '@renderer/hooks/useDisable'
@@ -11,7 +11,9 @@ import { useAppNavigation } from '@renderer/context/AppNavigation'
 import TweakScanCard from '@renderer/components/TweakScanCard'
 import ResultsReport from '@renderer/components/ResultsReport'
 import DnsOverrideModal from '@renderer/components/DnsOverrideModal'
-import { IconShield } from '@renderer/components/icons'
+import BenchmarkOverlay from '@renderer/components/BenchmarkOverlay'
+import type { BenchmarkOutcome } from '@renderer/lib/benchmark/runBenchmark'
+import { IconShield, IconSparkle } from '@renderer/components/icons'
 import { REFERRAL_URL } from '@renderer/lib/links'
 import { RISK_LABELS } from '@renderer/lib/tweakDisplay'
 import { getHagsRecommendation } from '@renderer/lib/hagsRecommendation'
@@ -32,6 +34,9 @@ export default function Optimizations(): React.JSX.Element {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [riskFilter, setRiskFilter] = useState<'all' | RiskLevel>('all')
   const { specs } = useSystemInfo()
+  const [priorBaseline, setPriorBaseline] = useState<BaselineMeasurement | null>(null)
+  const [measuring, setMeasuring] = useState(false)
+  const [measureStatus, setMeasureStatus] = useState<'idle' | 'submitting' | 'done' | 'error'>('idle')
 
   const anyBusy = applying || disabling
   // Staff can freely test tweaks for support purposes; customers need a pc/both ticket. Scanning
@@ -52,6 +57,62 @@ export default function Optimizations(): React.JSX.Element {
     if (!specs) return null
     return getUlpsRecommendation(specs.gpuCount)
   }, [specs])
+
+  // Phase 7 (CLAUDE-free-scan.md): once something real got applied, offer to re-measure against
+  // the baseline Free Scan already captured — but only if that baseline is a real benchmark, never
+  // a percentage-only fallback, since there'd be nothing numeric to compare against.
+  const appliedTweakIds = useMemo(
+    () => applyResult?.results.filter((r) => r.outcome === 'applied').map((r) => r.tweakId) ?? [],
+    [applyResult]
+  )
+  const appliedNeedsRestart = useMemo(
+    () => appliedTweakIds.some((id) => getTweakById(id)?.requiresRestart),
+    [appliedTweakIds]
+  )
+
+  useEffect(() => {
+    if (applyResult?.restorePointCreated && appliedTweakIds.length > 0) {
+      window.api.freeScan.getLatestBaseline().then(setPriorBaseline)
+      setMeasureStatus('idle')
+    }
+  }, [applyResult, appliedTweakIds])
+
+  async function handleMeasurementComplete(outcome: BenchmarkOutcome): Promise<void> {
+    setMeasuring(false)
+    if (!outcome.ok) return // Nothing usable to compare or store — same "never fabricate" rule as everywhere else.
+
+    const after = await window.api.freeScan.recordBaseline({
+      method: 'webgl-benchmark',
+      avgFps: outcome.stats.avgFps,
+      onePercentLowFps: outcome.stats.onePercentLowFps,
+      sampleCount: outcome.stats.sampleCount
+    })
+
+    if (priorBaseline?.method !== 'webgl-benchmark' || priorBaseline.avgFps === null || !specs) return
+
+    setMeasureStatus('submitting')
+    try {
+      await window.api.freeScan.submitBeforeAfter({
+        cpu_model: specs.cpuModel,
+        gpu_model: specs.gpuModel,
+        ram_total_bytes: specs.ramTotalBytes,
+        windows_version: specs.windowsVersion,
+        before_avg_fps: priorBaseline.avgFps,
+        before_one_percent_low_fps: priorBaseline.onePercentLowFps ?? undefined,
+        before_sample_count: priorBaseline.sampleCount,
+        after_avg_fps: after.avgFps!,
+        after_one_percent_low_fps: after.onePercentLowFps ?? undefined,
+        after_sample_count: after.sampleCount,
+        applied_tweak_ids: appliedTweakIds,
+        applied_categories: [
+          ...new Set(appliedTweakIds.map((id) => getTweakById(id)?.category).filter((c): c is Category => !!c))
+        ]
+      })
+      setMeasureStatus('done')
+    } catch {
+      setMeasureStatus('error')
+    }
+  }
 
   const resultByTweakId = useMemo(() => {
     const map = new Map<string, TweakScanResult>()
@@ -283,6 +344,40 @@ export default function Optimizations(): React.JSX.Element {
           )}
           {applyResult?.restorePointCreated && <ResultsReport results={applyResult.results} />}
           {disableResult?.restorePointCreated && <ResultsReport results={disableResult.results} />}
+
+          {applyResult?.restorePointCreated && appliedTweakIds.length > 0 && priorBaseline?.method === 'webgl-benchmark' && (
+            <div className="ft-glass mt-3 border-ft-orange/30 p-4">
+              <p className="ft-heading flex items-center gap-2 text-base text-white">
+                <IconSparkle className="h-4 w-4 text-ft-orange" /> Measure your real improvement
+              </p>
+              <p className="mt-1 text-sm text-white/60">
+                {appliedNeedsRestart
+                  ? "Some of what you applied needs a restart to fully take effect — for the most accurate number, restart first, then come back and measure."
+                  : 'Re-runs the same benchmark from Free Scan so you can see your actual before/after gain.'}
+              </p>
+              {measureStatus === 'done' ? (
+                <p className="mt-2 text-sm text-status-good">
+                  Measured — your new baseline is saved, and shared anonymously to help improve
+                  future estimates for hardware like yours.
+                </p>
+              ) : measureStatus === 'error' ? (
+                <p className="mt-2 text-sm text-white/60">
+                  Measured — your new baseline is saved locally, but couldn&apos;t reach the server
+                  to share it right now.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMeasuring(true)}
+                  disabled={measuring}
+                  className="ft-heading ft-btn-glow mt-3 rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  Measure My Improvement
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -382,6 +477,10 @@ export default function Optimizations(): React.JSX.Element {
           onConfirm={confirmDnsOverride}
           onCancel={() => setDnsOverrideModalOpen(false)}
         />
+      )}
+
+      {measuring && (
+        <BenchmarkOverlay onComplete={handleMeasurementComplete} onCancel={() => setMeasuring(false)} />
       )}
     </div>
   )

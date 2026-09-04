@@ -1,0 +1,81 @@
+{
+  "minSampleSize": 5,
+  "tierPriority": ["flagship", "high_end", "midrange", "entry"],
+  "tiers": {
+    "flagship": {
+      "match": {
+        "gpu_class": [
+          "3080 ti", "3090", "4080", "4090", "5080", "5090",
+          "6900 xt", "6950 xt", "7900 xt", "7900 xtx"
+        ]
+      },
+      "categories": {
+        "overall": { "avg_fps_pct": [5, 14], "low_fps_pct": [8, 18], "sample_size": 3, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 6], "sample_size": 3, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [2, 5], "low_fps_pct": [3, 6], "sample_size": 3, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [1, 3], "low_fps_pct": [1, 4], "sample_size": 3, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [1, 3], "low_fps_pct": [1, 4], "sample_size": 3, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [8, 25], "sample_size": 3, "confidence": "conservative_estimate" }
+      }
+    },
+    "high_end": {
+      "match": {
+        "gpu_class": [
+          "3060 ti", "3070", "3070 ti", "3080",
+          "4060 ti", "4070", "4070 ti", "4070 ti super", "4070 super",
+          "5070", "5070 ti",
+          "6600 xt", "6650 xt", "6700", "6700 xt", "6750 xt", "6800", "6800 xt",
+          "7600 xt", "7700 xt", "7800 xt", "7900 gre", "9070 xt"
+        ]
+      },
+      "categories": {
+        "overall": { "avg_fps_pct": [8, 20], "low_fps_pct": [12, 25], "sample_size": 7, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [2, 6], "low_fps_pct": [4, 10], "sample_size": 7, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [3, 7], "low_fps_pct": [4, 9], "sample_size": 7, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 5], "sample_size": 7, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 6], "sample_size": 7, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [10, 30], "sample_size": 7, "confidence": "conservative_estimate" }
+      }
+    },
+    "midrange": {
+      "match": {
+        "gpu_class": [
+          "1060", "1650", "1660", "2060", "3050", "3060", "4050", "4060",
+          "5060",
+          "570", "580", "590", "5500", "5600", "6500", "6600", "6650", "9060 xt", "9070"
+        ]
+      },
+      "categories": {
+        "overall": { "avg_fps_pct": [15, 32], "low_fps_pct": [20, 38], "sample_size": 14, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [4, 11], "low_fps_pct": [8, 19], "sample_size": 14, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [6, 14], "low_fps_pct": [9, 17], "sample_size": 14, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [3, 9], "low_fps_pct": [4, 10], "sample_size": 14, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [3, 8], "low_fps_pct": [5, 12], "sample_size": 14, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [15, 40], "sample_size": 14, "confidence": "conservative_estimate" }
+      }
+    },
+    "entry": {
+      "match": {
+        "gpu_class": [
+          "uhd graphics", "iris", "hd graphics", "vega 3", "vega 6", "vega 8", "vega 11",
+          "gt 1030", "mx150", "mx250", "mx350", "mx450",
+          "750", "950", "550"
+        ]
+      },
+      "categories": {
+        "overall": { "avg_fps_pct": [10, 25], "low_fps_pct": [15, 30], "sample_size": 4, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [3, 9], "low_fps_pct": [6, 15], "sample_size": 4, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [5, 12], "low_fps_pct": [7, 14], "sample_size": 4, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [2, 6], "low_fps_pct": [3, 8], "sample_size": 4, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [2, 6], "low_fps_pct": [3, 9], "sample_size": 4, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [10, 25], "sample_size": 4, "confidence": "conservative_estimate" }
+      }
+    }
+  },
+  "fallback": {
+    "avg_fps_pct": [15, 35],
+    "low_fps_pct": [15, 35],
+    "sample_size": 27,
+    "confidence": "conservative_estimate"
+  }
+}

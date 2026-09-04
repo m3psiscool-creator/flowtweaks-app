@@ -4,7 +4,7 @@ import { AppNavigationProvider } from '@renderer/context/AppNavigation'
 import { useAccount } from '@renderer/hooks/useAccount'
 import Home from '@renderer/pages/Home'
 import Optimizations from '@renderer/pages/Optimizations'
-import FpsEstimator from '@renderer/pages/FpsEstimator'
+import FreeScan from '@renderer/pages/FreeScan'
 import GameProfiles from '@renderer/pages/GameProfiles'
 import StartupPrograms from '@renderer/pages/StartupPrograms'
 import Restore from '@renderer/pages/Restore'
@@ -16,7 +16,7 @@ import About from '@renderer/pages/About'
 const PAGES: Record<string, () => React.JSX.Element> = {
   home: Home,
   optimizations: Optimizations,
-  'fps-estimator': FpsEstimator,
+  'free-scan': FreeScan,
   'game-profiles': GameProfiles,
   'startup-programs': StartupPrograms,
   restore: Restore,

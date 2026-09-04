@@ -1,14 +1,14 @@
 import {
   IconComputer,
   IconBolt,
-  IconCpu,
   IconGamepad,
   IconClock,
   IconShield,
   IconUser,
   IconInfo,
   IconRocket,
-  IconCreditCard
+  IconCreditCard,
+  IconSparkle
 } from '@renderer/components/icons'
 
 export interface NavItem {
@@ -20,7 +20,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { key: 'home', label: 'Home', icon: IconComputer },
   { key: 'optimizations', label: 'Optimizations', icon: IconBolt },
-  { key: 'fps-estimator', label: 'FPS Estimator', icon: IconCpu },
+  { key: 'free-scan', label: 'Free Scan', icon: IconSparkle },
   { key: 'game-profiles', label: 'Game Profiles', icon: IconGamepad },
   { key: 'startup-programs', label: 'Startup Programs', icon: IconRocket },
   { key: 'restore', label: 'Restore', icon: IconClock },
@@ -31,10 +31,11 @@ export const NAV_ITEMS: NavItem[] = [
 ]
 
 // Everything an unlicensed account can reach: the two tabs that get them to a purchase
-// (FPS Estimator as a free taste, Billing to actually pay), Optimizations itself (shown
-// blurred/locked — see Optimizations.tsx — so they can see exactly what they're missing), and
-// Account, kept only because it's where sign-in lives; there's nowhere else for that to happen.
-export const UNLICENSED_ALLOWED_KEYS = new Set(['fps-estimator', 'billing', 'optimizations', 'account'])
+// (Free Scan as the free taste — a real measured baseline plus locked tweaks, not just a guess —
+// and Billing to actually pay), Optimizations itself (shown blurred/locked — see
+// Optimizations.tsx — so they can see exactly what they're missing), and Account, kept only
+// because it's where sign-in lives; there's nowhere else for that to happen.
+export const UNLICENSED_ALLOWED_KEYS = new Set(['free-scan', 'billing', 'optimizations', 'account'])
 
 interface SidebarProps {
   active: string
