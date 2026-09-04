@@ -1,6 +1,5 @@
 import type {
   AppPurchasablePlan,
-  FreeScanBeforeAfterSubmission,
   FreeScanSubmission,
   FreeScanSubmissionResult,
   RequestCodeResult,
@@ -120,15 +119,4 @@ export async function createCheckoutSession(
  */
 export function submitFreeScanResults(payload: FreeScanSubmission): Promise<FreeScanSubmissionResult> {
   return apiFetch('/free-scan/results', { method: 'POST', body: JSON.stringify(payload) })
-}
-
-/**
- * Phase 7 — post-optimization re-measurement. No email, unlike submitFreeScanResults: this is
- * anonymous before/after telemetry, the dataset that eventually replaces performanceRanges.json's
- * seeded estimates with real measured ranges (CLAUDE-free-scan.md section 5).
- */
-export function submitFreeScanBeforeAfter(
-  payload: FreeScanBeforeAfterSubmission
-): Promise<FreeScanSubmissionResult> {
-  return apiFetch('/free-scan/before-after', { method: 'POST', body: JSON.stringify(payload) })
 }

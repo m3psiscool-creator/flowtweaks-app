@@ -38,13 +38,12 @@ export default function App(): React.JSX.Element {
   const ActivePage = PAGES[active] ?? Optimizations
 
   // Licensed/staff accounts land on Home as always. Unlicensed accounts start there too (the
-  // default state above), but this immediately bounces them to Optimizations — the one paid
-  // page they're still allowed to see, deliberately blurred/locked (see Optimizations.tsx) so
-  // the first thing they see is exactly what they're missing, not a dead end.
+  // default state above), but this immediately bounces them to Free Scan — the free, no-purchase
+  // proof of what the app actually does, and the first thing a brand new download should show.
   useEffect(() => {
     if (stillChecking) return
     if (!isFullAccess && !UNLICENSED_ALLOWED_KEYS.has(active)) {
-      setActive('optimizations')
+      setActive('free-scan')
     }
   }, [stillChecking, isFullAccess, active])
 

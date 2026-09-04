@@ -425,27 +425,6 @@ export interface FreeScanReport {
   extras: FreeScanExtras
 }
 
-// --- Free Scan: baseline measurement (Phase 3) ---
-
-/**
- * 'unavailable' is the Section 5 last-resort path: WebGL context creation failed (broken/ancient
- * GPU driver) or the benchmark was aborted before enough frames were sampled. Every FPS field is
- * null in that case — never a fabricated or estimated number standing in for a real measurement.
- */
-export type BaselineMethod = 'webgl-benchmark' | 'unavailable'
-
-export interface BaselineMeasurement {
-  id: string
-  createdAt: string
-  method: BaselineMethod
-  avgFps: number | null
-  onePercentLowFps: number | null
-  /** Frames actually sampled after warmup discard — the "sample size" a results screen can show for this specific baseline run. */
-  sampleCount: number
-  /** Why method is 'unavailable' — shown to the customer instead of a number, never swallowed silently. */
-  failureReason?: string
-}
-
 // --- Free Scan: submitting results to the backend (Phase 6) ---
 // Field names are snake_case to match the FastAPI/Pydantic model on flowtweaks-backend exactly —
 // this crosses process AND language boundaries, so keeping the wire shape identical on both sides
@@ -475,31 +454,9 @@ export interface FreeScanSubmission {
   already_optimal_count: number
   matched_tier?: string
   projected_avg_fps_range?: [number, number]
-  projected_low_fps_range?: [number, number]
   categories: FreeScanCategorySummary[]
 }
 
 export interface FreeScanSubmissionResult {
   id: string
-}
-
-// --- Free Scan: post-optimization before/after telemetry (Phase 7) ---
-// No email field, unlike FreeScanSubmission — this is anonymous performance telemetry, not a CRM
-// touchpoint. This is the dataset that eventually replaces performanceRanges.json's seeded
-// conservative_estimate numbers with real 'measured' ones (see CLAUDE-free-scan.md section 5).
-
-export interface FreeScanBeforeAfterSubmission {
-  cpu_model: string
-  gpu_model: string
-  ram_total_bytes: number
-  windows_version: string
-  storage_type?: string
-  before_avg_fps: number
-  before_one_percent_low_fps?: number
-  before_sample_count: number
-  after_avg_fps: number
-  after_one_percent_low_fps?: number
-  after_sample_count: number
-  applied_tweak_ids: string[]
-  applied_categories: string[]
 }

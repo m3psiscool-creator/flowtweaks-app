@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getTweakById } from '@data/tweaks'
 import { CATEGORY_COLORS, CATEGORY_LABELS, type Category } from '@data/schema'
-import type { BaselineMeasurement, FreeScanReport } from '@shared/ipc-types'
+import type { FreeScanReport } from '@shared/ipc-types'
 import {
   buildFreeScanProjection,
   countAvailableByCategory,
@@ -10,8 +10,6 @@ import {
   type FreeScanProjection
 } from '@renderer/lib/freeScan/projectionEngine'
 import { buildFreeScanSubmission } from '@renderer/lib/freeScan/buildSubmission'
-import type { BenchmarkOutcome } from '@renderer/lib/benchmark/runBenchmark'
-import BenchmarkOverlay from '@renderer/components/BenchmarkOverlay'
 import { useAccount } from '@renderer/hooks/useAccount'
 import { useAppNavigation } from '@renderer/context/AppNavigation'
 import { IconSparkle, IconShield, IconCheckCircle, IconAlertTriangle } from '@renderer/components/icons'
@@ -46,9 +44,9 @@ function renderHeadline(projection: FreeScanProjection): React.JSX.Element {
     return <></>
   }
 
-  if (!projection.matchedTier) {
+  if (!projection.matchedTier || !projection.estimatedFpsRange) {
     return (
-      <p className="mt-2 text-white/70">
+      <p className="mt-3 text-lg text-white/70">
         We don&apos;t have enough data on your exact hardware to project a range yet. Across all
         optimized systems we typically see{' '}
         <span className="font-mono text-ft-orange">{formatFpsPct(projection.overall.avgFpsPctRange)}</span> average
@@ -57,24 +55,25 @@ function renderHeadline(projection: FreeScanProjection): React.JSX.Element {
     )
   }
 
-  if (projection.baselineAvailable && projection.projectedAvgFpsRange) {
-    return (
-      <p className="mt-2 text-white/70">
-        Systems with similar specs typically reach{' '}
-        <span className="font-mono text-ft-orange">
-          {projection.projectedAvgFpsRange[0]}–{projection.projectedAvgFpsRange[1]} FPS
-        </span>{' '}
-        after optimization ({formatFpsPct(projection.overall.avgFpsPctRange)}).
-      </p>
-    )
-  }
-
   return (
-    <p className="mt-2 text-white/70">
-      Systems with similar specs typically see{' '}
-      <span className="font-mono text-ft-orange">{formatFpsPct(projection.overall.avgFpsPctRange)}</span> average FPS
-      after optimization.
-    </p>
+    <>
+      <p className="mt-2 text-sm uppercase tracking-[0.2em] text-white/40">Estimated Fortnite FPS (Performance Mode) for your hardware</p>
+      <p className="ft-heading mt-1 font-mono text-5xl text-white sm:text-6xl">
+        {projection.estimatedFpsRange[0]}
+        <span className="text-white/40">–</span>
+        {projection.estimatedFpsRange[1]}
+        <span className="ml-2 text-2xl text-white/40">fps</span>
+      </p>
+      {projection.projectedAvgFpsRange && (
+        <p className="mt-4 text-lg text-white/70">
+          Systems with similar specs typically reach{' '}
+          <span className="font-mono text-ft-orange">
+            {projection.projectedAvgFpsRange[0]}–{projection.projectedAvgFpsRange[1]} FPS
+          </span>{' '}
+          after optimization ({formatFpsPct(projection.overall.avgFpsPctRange)}).
+        </p>
+      )}
+    </>
   )
 }
 
@@ -104,15 +103,15 @@ function CategorySection({
   return (
     <div className="ft-glass p-4">
       <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-3 text-left">
-        <span className="ft-heading flex items-center gap-2 text-lg text-white/80">
+        <span className="ft-heading flex items-center gap-2 text-xl text-white/80">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[category] }} />
           {CATEGORY_LABELS[category]}
         </span>
-        <span className="shrink-0 text-sm text-white/50">{count} available</span>
+        <span className="shrink-0 text-base text-white/50">{count} available</span>
       </button>
 
       {rangeProjection && (
-        <p className="mt-1.5 text-xs text-white/40">
+        <p className="mt-1.5 text-sm text-white/40">
           {rangeProjection.kind === 'fps'
             ? `Typical gain on systems like yours: ${formatFpsPct(rangeProjection.avgFpsPctRange)} avg FPS`
             : `Typical improvement: ${rangeProjection.latencyMsRange[0]}–${rangeProjection.latencyMsRange[1]}ms lower latency`}
@@ -157,13 +156,39 @@ function CategorySection({
   )
 }
 
+/** Fake-but-honest progress: there's no real per-step signal from the main process (the scan is one
+ *  IPC round trip), so this ramps to 90% over the scan's typical real duration and snaps to 100%
+ *  only once the actual promise resolves — never claims a specific step finished that didn't. */
+function useScanProgress(active: boolean): number {
+  const [progress, setProgress] = useState(0)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!active) {
+      setProgress(0)
+      return
+    }
+    const start = performance.now()
+    const DURATION_MS = 2600
+    function tick(now: number): void {
+      const elapsed = now - start
+      const pct = Math.min(90, (elapsed / DURATION_MS) * 90)
+      setProgress(pct)
+      if (pct < 90) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [active])
+
+  return progress
+}
+
 export default function FreeScan(): React.JSX.Element {
   const [report, setReport] = useState<FreeScanReport | null>(null)
-  const [reportLoading, setReportLoading] = useState(true)
-  const [reportError, setReportError] = useState<string | null>(null)
-  const [baseline, setBaseline] = useState<BaselineMeasurement | null>(null)
-  const [baselineLoading, setBaselineLoading] = useState(true)
-  const [benchmarking, setBenchmarking] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<Category>>(new Set())
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
@@ -174,51 +199,24 @@ export default function FreeScan(): React.JSX.Element {
   const canApply = session?.user.role === 'staff' || (!!session && hasLicense)
   const stillCheckingAccount = accountLoading || (!!session && loadingTickets)
 
-  function runDetectionScan(): void {
-    setReportLoading(true)
-    setReportError(null)
+  const fakeProgress = useScanProgress(scanning)
+  const progressPct = scanning && !report ? fakeProgress : 100
+
+  function runFreeScan(): void {
+    setScanning(true)
+    setScanError(null)
     window.api.freeScan
       .run()
       .then(setReport)
-      .catch(() => setReportError('Scan failed. Try again.'))
-      .finally(() => setReportLoading(false))
-  }
-
-  useEffect(() => {
-    runDetectionScan()
-    window.api.freeScan
-      .getLatestBaseline()
-      .then(setBaseline)
-      .finally(() => setBaselineLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  async function handleBenchmarkComplete(outcome: BenchmarkOutcome): Promise<void> {
-    setBenchmarking(false)
-    const saved = await window.api.freeScan.recordBaseline(
-      outcome.ok
-        ? {
-            method: 'webgl-benchmark',
-            avgFps: outcome.stats.avgFps,
-            onePercentLowFps: outcome.stats.onePercentLowFps,
-            sampleCount: outcome.stats.sampleCount
-          }
-        : {
-            method: 'unavailable',
-            avgFps: null,
-            onePercentLowFps: null,
-            sampleCount: 0,
-            failureReason: outcome.reason
-          }
-    )
-    setBaseline(saved)
+      .catch(() => setScanError('Scan failed. Try again.'))
+      .finally(() => setScanning(false))
   }
 
   async function handleSendEmail(): Promise<void> {
     if (!report || !email.trim()) return
     setEmailStatus('sending')
     try {
-      const submission = buildFreeScanSubmission(report, baseline, projection, availableByCategory, alreadyOptimalCount, email)
+      const submission = buildFreeScanSubmission(report, projection, availableByCategory, alreadyOptimalCount, email)
       await window.api.freeScan.submitResults(submission)
       setEmailStatus('sent')
     } catch {
@@ -232,8 +230,8 @@ export default function FreeScan(): React.JSX.Element {
   )
 
   const projection = useMemo(
-    () => (report ? buildFreeScanProjection(report.specs.gpuModel, availableByCategory, baseline) : null),
-    [report, availableByCategory, baseline]
+    () => (report ? buildFreeScanProjection(report.specs.gpuModel, availableByCategory) : null),
+    [report, availableByCategory]
   )
 
   const totalAvailable = useMemo(
@@ -267,110 +265,76 @@ export default function FreeScan(): React.JSX.Element {
     })
   }
 
+  // Nothing has run yet — one big, grand entry point. No pre-scan step to click through first.
+  if (!report && !scanning) {
+    return (
+      <div className="flex min-h-[70vh] max-w-3xl flex-col items-center justify-center text-center">
+        <IconSparkle className="h-14 w-14 text-ft-orange" />
+        <h1 className="ft-heading mt-4 text-6xl text-ft-orange sm:text-7xl">FREE SCAN</h1>
+        <p className="mt-4 max-w-xl text-xl text-white/60">
+          A full, in-depth diagnostic of this PC — your estimated FPS, what&apos;s available to fix,
+          and what&apos;s already optimal. Nothing is changed. Free for everyone.
+        </p>
+        {scanError && <p className="mt-4 text-sm text-status-critical">{scanError}</p>}
+        <button
+          type="button"
+          onClick={runFreeScan}
+          className="ft-heading ft-btn-glow mt-8 rounded bg-ft-orange px-12 py-5 text-2xl tracking-wide text-ft-black transition-opacity hover:opacity-90"
+        >
+          Run Free Scan
+        </button>
+      </div>
+    )
+  }
+
+  // Scanning (and no results yet) — just the bar, no visual gimmick.
+  if (scanning && !report) {
+    return (
+      <div className="flex min-h-[70vh] max-w-xl flex-col items-center justify-center text-center">
+        <IconSparkle className="h-10 w-10 text-ft-orange" />
+        <p className="ft-heading mt-4 text-3xl text-white">Scanning this PC…</p>
+        <div className="mt-6 h-3 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-ft-orange transition-[width] duration-150"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="flex items-center gap-3 text-4xl text-ft-orange">
-          <IconSparkle className="h-8 w-8" /> Free Scan
+        <h1 className="flex items-center gap-3 text-5xl text-ft-orange">
+          <IconSparkle className="h-9 w-9" /> Free Scan
         </h1>
-        {report && !reportLoading && (
-          <button
-            type="button"
-            onClick={runDetectionScan}
-            className="text-sm text-white/40 underline hover:text-white/70"
-          >
-            Rescan
-          </button>
-        )}
+        <button type="button" onClick={runFreeScan} className="text-sm text-white/40 underline hover:text-white/70">
+          Rescan
+        </button>
       </div>
-      <p className="mt-2 text-white/60">
+      <p className="mt-2 text-lg text-white/60">
         A full, read-only diagnostic of this PC — nothing is changed. See exactly what&apos;s
         available, how much it typically helps on hardware like yours, and what&apos;s already
         optimal.
       </p>
 
-      {reportError && <p className="mt-4 text-sm text-status-critical">{reportError}</p>}
-
-      {!report && reportLoading && <p className="mt-10 text-sm text-white/40">Scanning this PC…</p>}
-
-      {report && (
+      {report && projection && (
         <>
-          {/* Baseline */}
-          {baselineLoading ? (
-            <div className="ft-glass mt-6 p-5">
-              <p className="text-sm text-white/40">Checking for a previous measurement…</p>
-            </div>
-          ) : baseline?.method === 'webgl-benchmark' ? (
-            <div className="ft-glass mt-6 p-5">
-              <p className="text-xs uppercase tracking-wide text-white/40">Your system right now</p>
-              <div className="mt-2 flex flex-wrap gap-8 font-mono">
-                <div>
-                  <p className="text-3xl text-white">{baseline.avgFps}</p>
-                  <p className="text-xs text-white/40">fps average</p>
-                </div>
-                <div>
-                  <p className="text-3xl text-white">{baseline.onePercentLowFps}</p>
-                  <p className="text-xs text-white/40">fps 1% low</p>
-                </div>
-                <div>
-                  <p className="text-3xl text-white">{report.extras.backgroundProcesses.totalProcessCount}</p>
-                  <p className="text-xs text-white/40">background processes</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setBenchmarking(true)}
-                className="mt-3 text-xs text-white/40 underline hover:text-white/70"
-              >
-                Re-run Benchmark
-              </button>
-            </div>
-          ) : baseline?.method === 'unavailable' ? (
-            <div className="ft-glass mt-6 border-status-warning/30 p-5">
-              <p className="text-sm text-white/60">
-                Couldn&apos;t measure a baseline on this PC ({baseline.failureReason}). Percentage
-                ranges below are still real — just not anchored to an absolute FPS number.
-              </p>
-              <button
-                type="button"
-                onClick={() => setBenchmarking(true)}
-                className="mt-3 text-xs text-ft-orange underline hover:opacity-80"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : (
-            <div className="ft-glass mt-6 border-ft-orange/40 bg-ft-orange/[0.05] p-5">
-              <p className="ft-heading text-lg text-white">Measure your real baseline</p>
-              <p className="mt-1 text-sm text-white/60">
-                A ~25 second benchmark gives you a real starting FPS number instead of just a
-                percentage estimate.
-              </p>
-              <button
-                type="button"
-                onClick={() => setBenchmarking(true)}
-                className="ft-heading ft-btn-glow mt-3 rounded bg-ft-orange px-5 py-2.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
-              >
-                Measure My Baseline
-              </button>
-            </div>
-          )}
-
           {/* Headline */}
-          {projection && (
-            <div className="ft-glass mt-4 border-ft-orange/30 p-5">
-              <p className="ft-heading text-2xl text-white">{totalAvailable} optimizations available</p>
-              {renderHeadline(projection)}
-              <p className="mt-2 text-xs text-white/40">
-                Based on {projection.overall.sampleSize} comparable system
-                {projection.overall.sampleSize === 1 ? '' : 's'} · your results may vary
-              </p>
-              <p className="mt-3 border-t border-white/10 pt-3 text-xs text-white/30">{PROJECTION_DISCLAIMER}</p>
-            </div>
-          )}
+          <div className="ft-glass mt-6 border-ft-orange/30 p-6">
+            {renderHeadline(projection)}
+            <p className="mt-4 text-xs text-white/40">
+              Based on {projection.overall.sampleSize} comparable system
+              {projection.overall.sampleSize === 1 ? '' : 's'} · your results may vary
+            </p>
+            <p className="mt-3 border-t border-white/10 pt-3 text-xs text-white/30">{PROJECTION_DISCLAIMER}</p>
+          </div>
+
+          <p className="ft-heading mt-5 text-2xl text-white">{totalAvailable} optimizations available</p>
 
           {/* Categories */}
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-4 flex flex-col gap-3">
             {categoriesWithAvailable.map((category) => {
               const tweaks = report.scan.results
                 .filter((r) => {
@@ -381,7 +345,7 @@ export default function FreeScan(): React.JSX.Element {
                 .map((r) => getTweakById(r.tweakId))
                 .filter((t): t is NonNullable<typeof t> => !!t)
 
-              const rangeProjection = projection?.categories.find((p) => p.category === category)
+              const rangeProjection = projection.categories.find((p) => p.category === category)
 
               return (
                 <CategorySection
@@ -465,6 +429,7 @@ export default function FreeScan(): React.JSX.Element {
               </button>
             </div>
           )}
+
           {/* Email capture — optional, skippable, never gates anything above */}
           <div className="ft-glass mt-6 p-5">
             <p className="ft-heading text-lg text-white">Email me my results</p>
@@ -503,9 +468,7 @@ export default function FreeScan(): React.JSX.Element {
         </>
       )}
 
-      {benchmarking && (
-        <BenchmarkOverlay onComplete={handleBenchmarkComplete} onCancel={() => setBenchmarking(false)} />
-      )}
+      {scanError && report === null && <p className="mt-4 text-sm text-status-critical">{scanError}</p>}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import type { Category } from '@data/schema'
-import type { BaselineMeasurement, FreeScanReport, FreeScanSubmission } from '@shared/ipc-types'
+import type { FreeScanReport, FreeScanSubmission } from '@shared/ipc-types'
 import type { FreeScanProjection } from './projectionEngine'
 
 /**
@@ -7,17 +7,24 @@ import type { FreeScanProjection } from './projectionEngine'
  * reads from the same `projection`/`availableByCategory` the results screen renders, so the email
  * a customer gets can never disagree with what they just saw (see server.py's
  * _free_scan_category_line, which rebuilds display lines from these same fields for the same reason).
+ *
+ * The backend's baseline_* fields predate the move from a live on-device benchmark to a hardware
+ * lookup (see projectionEngine.ts) — repurposed rather than re-plumbed through another backend
+ * deploy: baseline_avg_fps holds the estimated range's midpoint (a real number we actually showed,
+ * not a fabricated one), baseline_sample_count holds the tier's comparable-systems count, and
+ * baseline_one_percent_low_fps stays unset since there's no modeled 1%-low to report honestly.
  */
 export function buildFreeScanSubmission(
   report: FreeScanReport,
-  baseline: BaselineMeasurement | null,
   projection: FreeScanProjection | null,
   availableByCategory: Partial<Record<Category, number>>,
   alreadyOptimalCount: number,
   email?: string
 ): FreeScanSubmission {
   const totalAvailable = Object.values(availableByCategory).reduce<number>((sum, n) => sum + (n ?? 0), 0)
-  const hasRealBaseline = baseline?.method === 'webgl-benchmark'
+  const estimatedMidpoint = projection?.estimatedFpsRange
+    ? Math.round((projection.estimatedFpsRange[0] + projection.estimatedFpsRange[1]) / 2)
+    : undefined
 
   return {
     email: email?.trim() || undefined,
@@ -27,14 +34,12 @@ export function buildFreeScanSubmission(
     ram_total_bytes: report.specs.ramTotalBytes,
     windows_version: report.specs.windowsVersion,
     storage_type: report.extras.hardware.storageType,
-    baseline_avg_fps: hasRealBaseline ? (baseline!.avgFps ?? undefined) : undefined,
-    baseline_one_percent_low_fps: hasRealBaseline ? (baseline!.onePercentLowFps ?? undefined) : undefined,
-    baseline_sample_count: hasRealBaseline ? baseline!.sampleCount : undefined,
+    baseline_avg_fps: estimatedMidpoint,
+    baseline_sample_count: projection?.matchedTier ? projection.overall.sampleSize : undefined,
     total_available: totalAvailable,
     already_optimal_count: alreadyOptimalCount,
     matched_tier: projection?.matchedTier ?? undefined,
     projected_avg_fps_range: projection?.projectedAvgFpsRange,
-    projected_low_fps_range: projection?.projectedLowFpsRange,
     categories: (Object.entries(availableByCategory) as [Category, number | undefined][])
       .filter(([, count]) => (count ?? 0) > 0)
       .map(([category, count]) => {

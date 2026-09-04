@@ -1,14 +1,15 @@
 {
   "minSampleSize": 5,
-  "tierPriority": ["flagship", "high_end", "midrange", "entry"],
+  "tierPriority": ["flagship", "high_end", "midrange", "budget", "entry"],
   "tiers": {
     "flagship": {
       "match": {
         "gpu_class": [
-          "3080 ti", "3090", "4080", "4090", "5080", "5090",
-          "6900 xt", "6950 xt", "7900 xt", "7900 xtx"
+          "3080 ti", "3090", "3090 ti", "4080", "4080 super", "4090", "5080", "5090",
+          "6900 xt", "6950 xt", "7900 xt", "7900 xtx", "9070 xt"
         ]
       },
+      "fortnite_performance_mode_fps": [250, 360],
       "categories": {
         "overall": { "avg_fps_pct": [5, 14], "low_fps_pct": [8, 18], "sample_size": 3, "confidence": "conservative_estimate" },
         "background-processes": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 6], "sample_size": 3, "confidence": "conservative_estimate" },
@@ -21,37 +22,49 @@
     "high_end": {
       "match": {
         "gpu_class": [
-          "3060 ti", "3070", "3070 ti", "3080",
+          "3070", "3070 ti", "3080",
           "4060 ti", "4070", "4070 ti", "4070 ti super", "4070 super",
-          "5070", "5070 ti",
-          "6600 xt", "6650 xt", "6700", "6700 xt", "6750 xt", "6800", "6800 xt",
-          "7600 xt", "7700 xt", "7800 xt", "7900 gre", "9070 xt"
+          "5060", "5070", "5070 ti",
+          "6700", "6700 xt", "6750 xt", "6800", "6800 xt",
+          "7600 xt", "7700 xt", "7800 xt", "7900 gre", "9060 xt"
         ]
       },
+      "fortnite_performance_mode_fps": [195, 280],
       "categories": {
-        "overall": { "avg_fps_pct": [8, 20], "low_fps_pct": [12, 25], "sample_size": 7, "confidence": "conservative_estimate" },
-        "background-processes": { "avg_fps_pct": [2, 6], "low_fps_pct": [4, 10], "sample_size": 7, "confidence": "conservative_estimate" },
-        "windows-performance": { "avg_fps_pct": [3, 7], "low_fps_pct": [4, 9], "sample_size": 7, "confidence": "conservative_estimate" },
-        "gpu": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 5], "sample_size": 7, "confidence": "conservative_estimate" },
-        "fps-latency": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 6], "sample_size": 7, "confidence": "conservative_estimate" },
-        "network": { "latency_ms_reduction": [10, 30], "sample_size": 7, "confidence": "conservative_estimate" }
+        "overall": { "avg_fps_pct": [8, 20], "low_fps_pct": [12, 25], "sample_size": 9, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [2, 6], "low_fps_pct": [4, 10], "sample_size": 9, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [3, 7], "low_fps_pct": [4, 9], "sample_size": 9, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 5], "sample_size": 9, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [1, 4], "low_fps_pct": [2, 6], "sample_size": 9, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [10, 30], "sample_size": 9, "confidence": "conservative_estimate" }
       }
     },
     "midrange": {
       "match": {
-        "gpu_class": [
-          "1060", "1650", "1660", "2060", "3050", "3060", "4050", "4060",
-          "5060",
-          "570", "580", "590", "5500", "5600", "6500", "6600", "6650", "9060 xt", "9070"
-        ]
+        "gpu_class": ["2060", "3050", "3060", "3060 ti", "4050", "4060", "6600", "6600 xt", "6650 xt", "7600"]
       },
+      "fortnite_performance_mode_fps": [125, 220],
       "categories": {
-        "overall": { "avg_fps_pct": [15, 32], "low_fps_pct": [20, 38], "sample_size": 14, "confidence": "conservative_estimate" },
-        "background-processes": { "avg_fps_pct": [4, 11], "low_fps_pct": [8, 19], "sample_size": 14, "confidence": "conservative_estimate" },
-        "windows-performance": { "avg_fps_pct": [6, 14], "low_fps_pct": [9, 17], "sample_size": 14, "confidence": "conservative_estimate" },
-        "gpu": { "avg_fps_pct": [3, 9], "low_fps_pct": [4, 10], "sample_size": 14, "confidence": "conservative_estimate" },
-        "fps-latency": { "avg_fps_pct": [3, 8], "low_fps_pct": [5, 12], "sample_size": 14, "confidence": "conservative_estimate" },
-        "network": { "latency_ms_reduction": [15, 40], "sample_size": 14, "confidence": "conservative_estimate" }
+        "overall": { "avg_fps_pct": [15, 30], "low_fps_pct": [20, 36], "sample_size": 14, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [4, 10], "low_fps_pct": [7, 17], "sample_size": 14, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [6, 13], "low_fps_pct": [8, 16], "sample_size": 14, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [3, 8], "low_fps_pct": [4, 9], "sample_size": 14, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [3, 7], "low_fps_pct": [4, 10], "sample_size": 14, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [15, 38], "sample_size": 14, "confidence": "conservative_estimate" }
+      }
+    },
+    "budget": {
+      "match": {
+        "gpu_class": ["1060", "1650", "1650 super", "1660", "1660 super", "1660 ti", "570", "580", "590", "5500", "5600", "6500 xt"]
+      },
+      "fortnite_performance_mode_fps": [60, 140],
+      "categories": {
+        "overall": { "avg_fps_pct": [14, 28], "low_fps_pct": [18, 34], "sample_size": 10, "confidence": "conservative_estimate" },
+        "background-processes": { "avg_fps_pct": [4, 9], "low_fps_pct": [7, 16], "sample_size": 10, "confidence": "conservative_estimate" },
+        "windows-performance": { "avg_fps_pct": [5, 12], "low_fps_pct": [7, 15], "sample_size": 10, "confidence": "conservative_estimate" },
+        "gpu": { "avg_fps_pct": [2, 7], "low_fps_pct": [3, 8], "sample_size": 10, "confidence": "conservative_estimate" },
+        "fps-latency": { "avg_fps_pct": [2, 7], "low_fps_pct": [4, 9], "sample_size": 10, "confidence": "conservative_estimate" },
+        "network": { "latency_ms_reduction": [12, 32], "sample_size": 10, "confidence": "conservative_estimate" }
       }
     },
     "entry": {
@@ -62,6 +75,7 @@
           "750", "950", "550"
         ]
       },
+      "fortnite_performance_mode_fps": [25, 65],
       "categories": {
         "overall": { "avg_fps_pct": [10, 25], "low_fps_pct": [15, 30], "sample_size": 4, "confidence": "conservative_estimate" },
         "background-processes": { "avg_fps_pct": [3, 9], "low_fps_pct": [6, 15], "sample_size": 4, "confidence": "conservative_estimate" },

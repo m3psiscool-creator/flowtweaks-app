@@ -18,9 +18,9 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { key: 'free-scan', label: 'Free Scan', icon: IconSparkle },
   { key: 'home', label: 'Home', icon: IconComputer },
   { key: 'optimizations', label: 'Optimizations', icon: IconBolt },
-  { key: 'free-scan', label: 'Free Scan', icon: IconSparkle },
   { key: 'game-profiles', label: 'Game Profiles', icon: IconGamepad },
   { key: 'startup-programs', label: 'Startup Programs', icon: IconRocket },
   { key: 'restore', label: 'Restore', icon: IconClock },
