@@ -53,15 +53,25 @@ export function registerAccountIpcHandlers(): void {
   ipcMain.handle('account:getMyTickets', async (): Promise<AccountTicket[]> => {
     const session = await loadSession()
     if (!session || session.user.role !== 'customer') return []
-    const raw = await backend.getMyTickets(session.token)
-    return raw.map(mapTicket)
+    try {
+      const raw = await backend.getMyTickets(session.token)
+      return raw.map(mapTicket)
+    } catch (err) {
+      if (err instanceof backend.SessionExpiredError) await saveSession(null)
+      throw err
+    }
   })
 
   ipcMain.handle('account:getStaffTickets', async (): Promise<AccountTicket[]> => {
     const session = await loadSession()
     if (!session || session.user.role !== 'staff') return []
-    const raw = await backend.getStaffTickets(session.token)
-    return raw.map(mapTicket)
+    try {
+      const raw = await backend.getStaffTickets(session.token)
+      return raw.map(mapTicket)
+    } catch (err) {
+      if (err instanceof backend.SessionExpiredError) await saveSession(null)
+      throw err
+    }
   })
 
   // Opens the Stripe checkout in the system browser rather than returning the URL to the
@@ -94,6 +104,10 @@ export function registerAccountIpcHandlers(): void {
       const raw = await backend.redeemAccessCode(session.token, code)
       return { ok: true, ticket: mapTicket(raw) }
     } catch (err) {
+      if (err instanceof backend.SessionExpiredError) {
+        await saveSession(null)
+        return { ok: false, error: backend.SESSION_EXPIRED }
+      }
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
   })

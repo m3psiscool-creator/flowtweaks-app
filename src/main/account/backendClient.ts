@@ -37,11 +37,27 @@ interface AuthResult {
   user: RawUser
 }
 
+// Sentinel message the renderer matches on — Electron's IPC only carries an error's message across,
+// not its class, so this string is the contract between here and useAccount.tsx.
+export const SESSION_EXPIRED = 'SESSION_EXPIRED'
+
+export class SessionExpiredError extends Error {
+  constructor() {
+    super(SESSION_EXPIRED)
+  }
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers }
   })
+  // A 401 on a request that carried a token means the server no longer accepts the saved login
+  // (expired, or the server's signing secret changed) — not that it's unreachable. Login endpoints
+  // send no token, so their own 401s ("wrong password") keep their normal message below.
+  if (res.status === 401 && new Headers(options.headers).has('Authorization')) {
+    throw new SessionExpiredError()
+  }
   if (!res.ok) {
     let detail = res.statusText
     try {

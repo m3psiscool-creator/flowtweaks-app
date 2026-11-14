@@ -14,6 +14,11 @@ function hasAppLicense(tickets: AccountTicket[]): boolean {
 // These delays span roughly that whole wake-up window before giving up for real.
 const TICKET_RETRY_DELAYS_MS = [5000, 10000, 15000, 20000]
 
+// Must match SESSION_EXPIRED in src/main/account/backendClient.ts (main-process code can't be
+// imported into the renderer, and IPC only carries the message string across).
+const SESSION_EXPIRED = 'SESSION_EXPIRED'
+const SESSION_EXPIRED_NOTICE = 'Your sign-in expired. Please sign in again — your purchases are safe.'
+
 interface UseAccountResult {
   session: AccountSession | null
   loading: boolean
@@ -58,6 +63,14 @@ function useAccountState(): UseAccountResult {
         setTicketsError(null)
         break
       } catch (err) {
+        // The server rejected our saved login. Retrying can't fix that — the main process has
+        // already cleared the stored session, so drop back to the sign-in screen right away.
+        if (err instanceof Error && err.message.includes(SESSION_EXPIRED)) {
+          setSession(null)
+          setTickets([])
+          setError(SESSION_EXPIRED_NOTICE)
+          break
+        }
         if (attempt >= TICKET_RETRY_DELAYS_MS.length) {
           // Retries exhausted — a real failure, not just a cold start. Leave `tickets` as it was
           // (don't clobber a last-known-good license state with an empty list) and surface the
@@ -169,6 +182,12 @@ function useAccountState(): UseAccountResult {
       try {
         const result = await window.api.account.redeemCode(code)
         if (!result.ok) {
+          if (result.error === SESSION_EXPIRED) {
+            setSession(null)
+            setTickets([])
+            setError(SESSION_EXPIRED_NOTICE)
+            return { ok: false }
+          }
           setError(result.error ?? 'Invalid or already-used code.')
           return { ok: false }
         }

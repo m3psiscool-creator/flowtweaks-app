@@ -131,6 +131,7 @@ export default function Billing(): React.JSX.Element {
             Couldn&apos;t reach the server to check your account — this can happen right after the
             backend wakes up from being idle. This doesn&apos;t mean you&apos;re unlicensed.
           </p>
+          <p className="mt-2 text-xs text-white/30">Details: {ticketsError}</p>
           <button
             type="button"
             onClick={refreshTickets}
