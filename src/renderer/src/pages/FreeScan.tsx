@@ -393,7 +393,7 @@ export default function FreeScan(): React.JSX.Element {
             <div className="ft-glass mt-6 border-ft-orange/40 bg-ft-orange/[0.06] p-5">
               <p className="ft-heading text-xl text-ft-orange">Unlock every tweak on this PC</p>
               <p className="mt-2 text-sm text-white/60">
-                PC package — $15, one-time, no subscription. {session ? '' : 'Sign in from the Account tab, then unlock.'}
+                Try every PC tweak free for 3 days, or buy the PC package — $15, one-time, no subscription. {session ? '' : 'Sign in from the Account tab to start.'}
               </p>
               <button
                 type="button"
@@ -401,7 +401,7 @@ export default function FreeScan(): React.JSX.Element {
                 disabled={busy}
                 className="ft-heading ft-btn-glow mt-3 rounded bg-ft-orange px-5 py-2.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
               >
-                Unlock in Billing
+                Free 3-day trial / Unlock
               </button>
               <p className="mt-2 text-xs text-white/40">
                 Console tweaks ($5) are handled through{' '}

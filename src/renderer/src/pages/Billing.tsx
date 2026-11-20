@@ -3,6 +3,7 @@ import { useAccount } from '@renderer/hooks/useAccount'
 import type { AccountTicket, AppPurchasablePlan } from '@shared/ipc-types'
 import { IconCreditCard, IconShield, IconClock, IconSparkle } from '@renderer/components/icons'
 import { REFERRAL_URL } from '@renderer/lib/links'
+import TrialClock from '@renderer/components/TrialClock'
 
 // PC+Console combo was discontinued as a purchase option — see AppPurchasablePlan. Anyone who
 // already bought it keeps their unlock (useAccount's hasAppLicense still honors 'both' tickets);
@@ -50,6 +51,8 @@ export default function Billing(): React.JSX.Element {
     loadingTickets,
     ticketsError,
     hasLicense,
+    trial,
+    startTrial,
     error,
     busy,
     refreshTickets,
@@ -86,6 +89,9 @@ export default function Billing(): React.JSX.Element {
   }
 
   const isStaff = session.user.role === 'staff'
+  const onTrial = trial?.state === 'active' && !trial.hasPaid
+  const canStartTrial = !hasLicense && trial?.state === 'none' && !trial.hasPaid
+  const trialEnded = !hasLicense && trial?.state === 'expired' && !trial.hasPaid
 
   return (
     <div className="max-w-2xl">
@@ -142,9 +148,53 @@ export default function Billing(): React.JSX.Element {
         </section>
       )}
 
-      {!isStaff && !loadingTickets && !ticketsError && !hasLicense && (
+      {!isStaff && !loadingTickets && !ticketsError && canStartTrial && (
         <section className="ft-glass mt-6 border-ft-orange/30 p-5">
-          <h2 className="ft-heading text-xl text-ft-orange">Unlock Flow Tweaks</h2>
+          <h2 className="ft-heading text-xl text-ft-orange">Try it free for 3 days</h2>
+          <p className="mt-2 text-sm text-white/60">
+            Get every PC tweak, no payment needed. When the 3 days are up, Flow Tweaks puts your PC
+            back to how it was — unless you buy to keep them. Uninstalling the app during the trial
+            does the same. One trial per PC.
+          </p>
+          <button
+            type="button"
+            onClick={() => startTrial()}
+            disabled={busy}
+            className="ft-heading ft-btn-glow mt-4 rounded bg-ft-orange px-5 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {busy ? 'Starting…' : 'Start 3-day free trial'}
+          </button>
+          {error && <p className="mt-3 text-sm text-status-critical">{error}</p>}
+        </section>
+      )}
+
+      {!isStaff && !loadingTickets && trialEnded && (
+        <section className="ft-glass mt-6 border-status-warning/30 p-5">
+          <h2 className="ft-heading text-xl text-status-warning">Your free trial has ended</h2>
+          <p className="mt-2 text-sm text-white/60">
+            Your PC has been put back to how it was before the trial. Buy below to unlock the tweaks
+            again.
+          </p>
+        </section>
+      )}
+
+      {!isStaff && onTrial && trial && (
+        <section className="ft-glass mt-6 border-ft-orange/30 p-5">
+          <h2 className="ft-heading flex items-center gap-2 text-xl text-ft-orange">
+            <IconClock className="h-5 w-5" /> Free trial — <TrialClock remainingMs={trial.remainingMs} /> left
+          </h2>
+          <p className="mt-2 text-sm text-white/60">
+            All PC tweaks are unlocked. When the trial ends your tweaks are removed automatically —
+            buy below to keep them.
+          </p>
+        </section>
+      )}
+
+      {!isStaff && !loadingTickets && !ticketsError && (!hasLicense || onTrial) && (
+        <section className="ft-glass mt-6 border-ft-orange/30 p-5">
+          <h2 className="ft-heading text-xl text-ft-orange">
+            {onTrial ? 'Keep your tweaks' : 'Unlock Flow Tweaks'}
+          </h2>
           <p className="mt-2 text-sm text-white/60">
             Buy a plan to unlock every tweak on this PC, or redeem an access code if you have one.
           </p>
@@ -232,7 +282,7 @@ export default function Billing(): React.JSX.Element {
         </section>
       )}
 
-      {!isStaff && hasLicense && (
+      {!isStaff && hasLicense && !onTrial && (
         <section className="ft-glass mt-6 border-status-good/30 p-5">
           <h2 className="ft-heading flex items-center gap-2 text-xl text-status-good">
             <IconShield className="h-5 w-5" /> Unlocked

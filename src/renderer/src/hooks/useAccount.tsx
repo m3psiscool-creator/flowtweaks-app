@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { AccountSession, AccountTicket, AppPurchasablePlan, TicketPlan } from '@shared/ipc-types'
+import type { AccountSession, AccountTicket, AppPurchasablePlan, TicketPlan, TrialInfo } from '@shared/ipc-types'
 
 // A ticket for pc or both means the desktop app itself is unlocked — console-only tickets are
 // real purchases, just not ones this Windows app can do anything with (see AppPurchasablePlan).
@@ -26,6 +26,8 @@ interface UseAccountResult {
   loadingTickets: boolean
   ticketsError: string | null
   hasLicense: boolean
+  trial: TrialInfo | null
+  startTrial: () => Promise<boolean>
   error: string | null
   busy: boolean
   requestCode: (email: string) => Promise<boolean>
@@ -50,6 +52,7 @@ function useAccountState(): UseAccountResult {
   const [tickets, setTickets] = useState<AccountTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(false)
   const [ticketsError, setTicketsError] = useState<string | null>(null)
+  const [trial, setTrial] = useState<TrialInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -62,6 +65,17 @@ function useAccountState(): UseAccountResult {
         const result = await fetcher()
         setTickets(result)
         setTicketsError(null)
+        // The free trial only matters to customers who don't already own the PC package. The
+        // server decides whether it's running; a failed lookup just leaves the last known value.
+        if (role === 'customer' && !hasAppLicense(result)) {
+          try {
+            setTrial(await window.api.account.getTrial())
+          } catch {
+            // keep last known trial state
+          }
+        } else {
+          setTrial(null)
+        }
         break
       } catch (err) {
         // The server rejected our saved login. Retrying can't fix that — the main process has
@@ -69,6 +83,7 @@ function useAccountState(): UseAccountResult {
         if (err instanceof Error && err.message.includes(SESSION_EXPIRED)) {
           setSession(null)
           setTickets([])
+          setTrial(null)
           setError(SESSION_EXPIRED_NOTICE)
           break
         }
@@ -168,11 +183,46 @@ function useAccountState(): UseAccountResult {
     await window.api.account.logout()
     setSession(null)
     setTickets([])
+    setTrial(null)
   }, [])
 
   const refreshTickets = useCallback(() => {
     if (session) loadTickets(session.user.role)
   }, [session, loadTickets])
+
+  const startTrial = useCallback(async () => {
+    setError(null)
+    setBusy(true)
+    try {
+      const result = await window.api.account.startTrial()
+      if (!result.ok) {
+        if (result.error === SESSION_EXPIRED) {
+          setSession(null)
+          setTickets([])
+          setTrial(null)
+          setError(SESSION_EXPIRED_NOTICE)
+          return false
+        }
+        setError(result.error ?? 'Could not start the free trial.')
+        return false
+      }
+      setTrial(result.trial ?? null)
+      return true
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  // Re-check the moment a running trial ends (so the app locks right then), and whenever the main
+  // process says the trial's been enforced or the customer bought.
+  useEffect(() => {
+    if (!session || trial?.state !== 'active' || !trial.endsAt) return
+    const msLeft = Date.parse(trial.endsAt) - Date.now()
+    const timer = setTimeout(() => refreshTickets(), Math.max(1000, msLeft + 2500))
+    return () => clearTimeout(timer)
+  }, [session, trial, refreshTickets])
+
+  useEffect(() => window.api.account.onTrialChanged(() => refreshTickets()), [refreshTickets])
 
   const buyPlan = useCallback(
     async (plan: AppPurchasablePlan, referralCode?: string) => {
@@ -223,7 +273,9 @@ function useAccountState(): UseAccountResult {
     tickets,
     loadingTickets,
     ticketsError,
-    hasLicense: hasAppLicense(tickets),
+    hasLicense: hasAppLicense(tickets) || trial?.state === 'active',
+    trial,
+    startTrial,
     error,
     busy,
     requestCode,

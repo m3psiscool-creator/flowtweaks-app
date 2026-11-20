@@ -12,6 +12,8 @@ import { registerFreeScanIpcHandlers } from './ipc/freeScan'
 import { relaunchElevatedIfNeeded } from './system/selfElevate'
 import { reconcilePendingEntries } from './restore/reconcile'
 import { initAutoUpdater } from './updater'
+import { getHeadlessMode, runHeadless } from './trial/headless'
+import { startTrialWatcher } from './trial/watcher'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -55,7 +57,17 @@ function createWindow(): void {
   }
 }
 
+// Windowless runs — the hourly trial-expiry scheduled task and the uninstaller both launch the
+// exe with a flag. No window, no UAC relaunch (the task and the uninstaller are already
+// elevated), no updater: do the one job and exit.
+const headlessMode = getHeadlessMode(process.argv)
+
 app.whenReady().then(async () => {
+  if (headlessMode) {
+    await runHeadless(headlessMode)
+    return
+  }
+
   // Most tweaks need admin rights (HKLM writes, restore points), so the app asks for elevation
   // up front via a real UAC prompt rather than making the customer relaunch it manually. Declined
   // or failed elevation isn't fatal — falls through to running unelevated, same as always.
@@ -86,6 +98,7 @@ app.whenReady().then(async () => {
 
   createWindow()
   initAutoUpdater()
+  startTrialWatcher()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

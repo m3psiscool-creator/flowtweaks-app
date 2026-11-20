@@ -79,6 +79,27 @@ export function verifyCustomerCode(email: string, code: string): Promise<AuthRes
   return apiFetch('/auth/customer/verify', { method: 'POST', body: JSON.stringify({ email, code }) })
 }
 
+export interface RawTrialStatus {
+  state: 'none' | 'active' | 'expired'
+  has_paid: boolean
+  started_at: string | null
+  ends_at: string | null
+  server_now: string
+  trial_days: number
+}
+
+export function getTrialStatus(token: string): Promise<RawTrialStatus> {
+  return apiFetch('/trial/status', { headers: { Authorization: `Bearer ${token}` } })
+}
+
+export function startTrial(token: string, deviceId: string): Promise<RawTrialStatus> {
+  return apiFetch('/trial/start', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ device_id: deviceId })
+  })
+}
+
 export function googleLogin(idToken: string): Promise<AuthResult> {
   return apiFetch('/auth/customer/google', { method: 'POST', body: JSON.stringify({ id_token: idToken }) })
 }

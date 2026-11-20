@@ -3,6 +3,10 @@ import * as backend from '../account/backendClient'
 import type { RawTicket, RawUser } from '../account/backendClient'
 import { loadSession, saveSession } from '../account/sessionStore'
 import { getGoogleIdToken } from '../account/googleLogin'
+import { resolveAccess, toTrialInfo } from '../trial/access'
+import { getDeviceId } from '../trial/deviceId'
+import { saveTrialState } from '../trial/trialStore'
+import { registerTrialTask } from '../trial/scheduledTask'
 import type {
   AccountSession,
   AccountTicket,
@@ -10,6 +14,8 @@ import type {
   AppPurchasablePlan,
   CheckoutResult,
   RedeemCodeResult,
+  StartTrialResult,
+  TrialInfo,
   TicketPlan
 } from '../../shared/ipc-types'
 
@@ -58,6 +64,37 @@ export function registerAccountIpcHandlers(): void {
   })
 
   ipcMain.handle('account:logout', () => saveSession(null))
+
+  // Server-decided trial status (also refreshes the local record the scheduled task and the
+  // uninstaller rely on). Null for signed-out and staff accounts — neither has a trial.
+  ipcMain.handle('account:getTrial', async (): Promise<TrialInfo | null> => {
+    const session = await loadSession()
+    if (!session || session.user.role !== 'customer') return null
+    return (await resolveAccess()).trial
+  })
+
+  ipcMain.handle('account:startTrial', async (): Promise<StartTrialResult> => {
+    const session = await loadSession()
+    if (!session || session.user.role !== 'customer') return { ok: false, error: 'Sign in first.' }
+    try {
+      const deviceId = await getDeviceId()
+      const raw = await backend.startTrial(session.token, deviceId)
+      await saveTrialState({
+        kind: 'trial',
+        customerId: session.user.id,
+        token: session.token,
+        endsAt: raw.ends_at
+      })
+      if (raw.ends_at) await registerTrialTask(Date.parse(raw.ends_at))
+      return { ok: true, trial: toTrialInfo(raw) }
+    } catch (err) {
+      if (err instanceof backend.SessionExpiredError) {
+        await saveSession(null)
+        return { ok: false, error: backend.SESSION_EXPIRED }
+      }
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
 
   ipcMain.handle('account:getMyTickets', async (): Promise<AccountTicket[]> => {
     const session = await loadSession()

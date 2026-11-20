@@ -204,7 +204,7 @@ export default function Account(): React.JSX.Element {
         )}
         {!isStaff && (
           <p className="mt-3 text-xs text-white/40">
-            Looking to buy a plan, redeem a code, or check payment history? Head to the Billing tab.
+            Want the free 3-day trial, to buy a plan, redeem a code, or check payment history? Head to the Billing tab.
           </p>
         )}
       </section>

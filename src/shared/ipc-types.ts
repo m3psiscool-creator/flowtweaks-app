@@ -318,6 +318,25 @@ export interface AccountTicket {
   createdAt: string
 }
 
+export type TrialState = 'none' | 'active' | 'expired'
+
+/** What the Account/Billing UI needs to know about the 3-day PC trial. */
+export interface TrialInfo {
+  state: TrialState
+  /** ISO timestamp the trial ends (server clock), null if never started. */
+  endsAt: string | null
+  /** Milliseconds remaining as of the server's clock when this was fetched (0 once ended). */
+  remainingMs: number
+  /** Customer already owns pc/both — a trial is irrelevant. */
+  hasPaid: boolean
+}
+
+export interface StartTrialResult {
+  ok: boolean
+  error?: string
+  trial?: TrialInfo
+}
+
 export interface RequestCodeResult {
   ok: boolean
   message: string

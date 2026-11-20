@@ -246,8 +246,8 @@ export default function Optimizations(): React.JSX.Element {
               <p className="ft-heading text-base text-ft-orange">This account is locked</p>
               <p className="text-sm text-white/60">
                 {session
-                  ? "You're signed in, but this account hasn't unlocked a plan yet."
-                  : 'Sign in from the Account tab, then unlock a plan to start applying tweaks.'}
+                  ? "You're signed in, but this account hasn't unlocked a plan yet — start a free 3-day trial or buy one."
+                  : 'Sign in from the Account tab, then start a free 3-day trial or unlock a plan.'}
               </p>
               <a
                 href={REFERRAL_URL}
@@ -264,7 +264,7 @@ export default function Optimizations(): React.JSX.Element {
             onClick={() => navigate('billing')}
             className="ft-heading ft-btn-glow shrink-0 rounded bg-ft-orange px-5 py-2.5 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90"
           >
-            Unlock in Billing
+            Free 3-day trial / Unlock
           </button>
         </div>
       )}

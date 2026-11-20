@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Sidebar, { UNLICENSED_ALLOWED_KEYS } from '@renderer/components/Sidebar'
 import { AppNavigationProvider } from '@renderer/context/AppNavigation'
 import { useAccount } from '@renderer/hooks/useAccount'
+import TrialClock from '@renderer/components/TrialClock'
 import Home from '@renderer/pages/Home'
 import Optimizations from '@renderer/pages/Optimizations'
 import FreeScan from '@renderer/pages/FreeScan'
@@ -28,7 +29,7 @@ const PAGES: Record<string, () => React.JSX.Element> = {
 
 export default function App(): React.JSX.Element {
   const [active, setActive] = useState('home')
-  const { session, hasLicense, loading: accountLoading, loadingTickets } = useAccount()
+  const { session, hasLicense, trial, loading: accountLoading, loadingTickets } = useAccount()
   // While we don't yet know (session still loading, or the ticket fetch is mid-retry after a
   // cold Render backend) we neither grant nor revoke access — see useAccount's retry loop. Only
   // a completed check (success or exhausted retries) is allowed to change what's shown; a slow
@@ -55,6 +56,24 @@ export default function App(): React.JSX.Element {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar active={active} onSelect={setActive} restricted={!stillChecking && !isFullAccess} />
         <main className="flex-1 overflow-y-auto p-8">
+          {trial?.state === 'active' && !trial.hasPaid && (
+            <div className="mb-6 flex items-center justify-between gap-3 rounded border border-ft-orange/40 bg-ft-orange/10 px-4 py-2.5 text-sm">
+              <span className="text-white/80">
+                Free trial ends in{' '}
+                <strong className="text-ft-orange">
+                  <TrialClock remainingMs={trial.remainingMs} />
+                </strong>
+                . Your tweaks are removed when it ends.
+              </span>
+              <button
+                type="button"
+                onClick={() => setActive('billing')}
+                className="ft-heading shrink-0 text-ft-orange hover:underline"
+              >
+                Buy to keep them →
+              </button>
+            </div>
+          )}
           <AppNavigationProvider value={setActive}>
             <ActivePage />
           </AppNavigationProvider>

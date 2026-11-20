@@ -16,6 +16,8 @@ import type {
   FreeScanSubmission,
   FreeScanSubmissionResult,
   RedeemCodeResult,
+  StartTrialResult,
+  TrialInfo,
   RequestCodeResult,
   RestorePointInfo,
   RestoreSession,
@@ -93,6 +95,13 @@ const api = {
     staffLogin: (username: string, password: string): Promise<AccountSession> =>
       ipcRenderer.invoke('account:staffLogin', username, password),
     logout: (): Promise<void> => ipcRenderer.invoke('account:logout'),
+    getTrial: (): Promise<TrialInfo | null> => ipcRenderer.invoke('account:getTrial'),
+    startTrial: (): Promise<StartTrialResult> => ipcRenderer.invoke('account:startTrial'),
+    onTrialChanged: (callback: () => void): (() => void) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('trial:changed', listener)
+      return () => ipcRenderer.removeListener('trial:changed', listener)
+    },
     getMyTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getMyTickets'),
     getStaffTickets: (): Promise<AccountTicket[]> => ipcRenderer.invoke('account:getStaffTickets'),
     buyPlan: (plan: AppPurchasablePlan, referralCode?: string): Promise<CheckoutResult> =>
