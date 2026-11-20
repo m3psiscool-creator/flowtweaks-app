@@ -2,6 +2,7 @@ import { ipcMain, shell } from 'electron'
 import * as backend from '../account/backendClient'
 import type { RawTicket, RawUser } from '../account/backendClient'
 import { loadSession, saveSession } from '../account/sessionStore'
+import { getGoogleIdToken } from '../account/googleLogin'
 import type {
   AccountSession,
   AccountTicket,
@@ -36,6 +37,14 @@ export function registerAccountIpcHandlers(): void {
 
   ipcMain.handle('account:verifyCode', async (_event, email: string, code: string) => {
     const result = await backend.verifyCustomerCode(email, code)
+    const session: AccountSession = { token: result.token, user: mapUser(result.user) }
+    await saveSession(session)
+    return session
+  })
+
+  ipcMain.handle('account:googleLogin', async () => {
+    const idToken = await getGoogleIdToken()
+    const result = await backend.googleLogin(idToken)
     const session: AccountSession = { token: result.token, user: mapUser(result.user) }
     await saveSession(session)
     return session

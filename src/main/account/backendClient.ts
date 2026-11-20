@@ -79,6 +79,10 @@ export function verifyCustomerCode(email: string, code: string): Promise<AuthRes
   return apiFetch('/auth/customer/verify', { method: 'POST', body: JSON.stringify({ email, code }) })
 }
 
+export function googleLogin(idToken: string): Promise<AuthResult> {
+  return apiFetch('/auth/customer/google', { method: 'POST', body: JSON.stringify({ id_token: idToken }) })
+}
+
 export function staffLogin(username: string, password: string): Promise<AuthResult> {
   return apiFetch('/auth/staff/login', { method: 'POST', body: JSON.stringify({ username, password }) })
 }

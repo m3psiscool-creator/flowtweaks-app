@@ -89,6 +89,7 @@ const api = {
       ipcRenderer.invoke('account:requestCode', email, plan),
     verifyCode: (email: string, code: string): Promise<AccountSession> =>
       ipcRenderer.invoke('account:verifyCode', email, code),
+    googleLogin: (): Promise<AccountSession> => ipcRenderer.invoke('account:googleLogin'),
     staffLogin: (username: string, password: string): Promise<AccountSession> =>
       ipcRenderer.invoke('account:staffLogin', username, password),
     logout: (): Promise<void> => ipcRenderer.invoke('account:logout'),

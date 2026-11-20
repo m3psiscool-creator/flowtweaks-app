@@ -35,7 +35,7 @@ function TicketRow({ ticket }: { ticket: AccountTicket }): React.JSX.Element {
 }
 
 export default function Account(): React.JSX.Element {
-  const { session, loading, tickets, loadingTickets, error, busy, requestCode, verifyCode, staffLogin, logout } =
+  const { session, loading, tickets, loadingTickets, error, busy, requestCode, verifyCode, googleLogin, staffLogin, logout } =
     useAccount()
 
   const [mode, setMode] = useState<'customer' | 'staff'>('customer')
@@ -113,6 +113,19 @@ export default function Account(): React.JSX.Element {
                   </button>
                 </>
               )}
+              <div className="flex items-center gap-3 text-xs text-white/30">
+                <span className="h-px flex-1 bg-white/10" />
+                or
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+              <button
+                type="button"
+                onClick={() => googleLogin()}
+                disabled={busy}
+                className="rounded border border-white/20 bg-black/40 px-4 py-2 text-sm text-white transition-colors hover:border-ft-orange disabled:opacity-40"
+              >
+                {busy ? 'Waiting for Google…' : 'Continue with Google'}
+              </button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">

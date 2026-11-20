@@ -30,6 +30,7 @@ interface UseAccountResult {
   busy: boolean
   requestCode: (email: string) => Promise<boolean>
   verifyCode: (email: string, code: string) => Promise<boolean>
+  googleLogin: () => Promise<boolean>
   staffLogin: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
   refreshTickets: () => void
@@ -128,6 +129,22 @@ function useAccountState(): UseAccountResult {
     [loadTickets]
   )
 
+  const googleLogin = useCallback(async () => {
+    setError(null)
+    setBusy(true)
+    try {
+      const s = await window.api.account.googleLogin()
+      setSession(s)
+      loadTickets(s.user.role)
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }, [loadTickets])
+
   const staffLogin = useCallback(
     async (username: string, password: string) => {
       setError(null)
@@ -211,6 +228,7 @@ function useAccountState(): UseAccountResult {
     busy,
     requestCode,
     verifyCode,
+    googleLogin,
     staffLogin,
     logout,
     refreshTickets,
