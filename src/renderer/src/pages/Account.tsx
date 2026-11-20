@@ -35,8 +35,20 @@ function TicketRow({ ticket }: { ticket: AccountTicket }): React.JSX.Element {
 }
 
 export default function Account(): React.JSX.Element {
-  const { session, loading, tickets, loadingTickets, error, busy, requestCode, verifyCode, googleLogin, staffLogin, logout } =
-    useAccount()
+  const {
+    session,
+    loading,
+    tickets,
+    loadingTickets,
+    error,
+    busy,
+    startRequested,
+    requestCode,
+    verifyCode,
+    googleLogin,
+    staffLogin,
+    logout
+  } = useAccount()
 
   const [mode, setMode] = useState<'customer' | 'staff'>('customer')
   const [email, setEmail] = useState('')
@@ -60,9 +72,15 @@ export default function Account(): React.JSX.Element {
         <h1 className="flex items-center gap-3 text-4xl text-ft-orange">
           <IconUser className="h-8 w-8" /> Account
         </h1>
+        {startRequested && (
+          <div className="mt-4 rounded border border-ft-orange/40 bg-ft-orange/10 p-3 text-sm text-white/80">
+            <strong className="text-ft-orange">Almost there.</strong> Create your free account below
+            — your 3-day free trial starts as soon as you&apos;re in, and your tweaks unlock.
+          </div>
+        )}
         <p className="mt-2 text-white/60">
-          Sign in with the email you used at checkout — we&apos;ll email a 6-digit code, no
-          password needed.
+          Enter your email and we&apos;ll send a 6-digit code — no password needed. New here? That
+          creates your account. Already bought? Use the email from checkout.
         </p>
 
         <div className="ft-glass mt-6 p-5">
@@ -102,7 +120,7 @@ export default function Account(): React.JSX.Element {
                     disabled={busy || !code}
                     className="ft-heading ft-btn-glow rounded bg-ft-orange px-4 py-2 text-sm tracking-wide text-ft-black transition-opacity hover:opacity-90 disabled:opacity-40"
                   >
-                    {busy ? 'Verifying…' : 'Verify & Sign In'}
+                    {busy ? 'Verifying…' : 'Verify & Continue'}
                   </button>
                   <button
                     type="button"

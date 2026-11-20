@@ -28,6 +28,10 @@ interface UseAccountResult {
   hasLicense: boolean
   trial: TrialInfo | null
   startTrial: () => Promise<boolean>
+  // Set by Home's big Start Tweaks button for a signed-out visitor: once they've created their
+  // account, App.tsx carries them straight on (starts the free trial, opens Optimizations).
+  startRequested: boolean
+  setStartRequested: (value: boolean) => void
   error: string | null
   busy: boolean
   requestCode: (email: string) => Promise<boolean>
@@ -53,6 +57,7 @@ function useAccountState(): UseAccountResult {
   const [loadingTickets, setLoadingTickets] = useState(false)
   const [ticketsError, setTicketsError] = useState<string | null>(null)
   const [trial, setTrial] = useState<TrialInfo | null>(null)
+  const [startRequested, setStartRequested] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -276,6 +281,8 @@ function useAccountState(): UseAccountResult {
     hasLicense: hasAppLicense(tickets) || trial?.state === 'active',
     trial,
     startTrial,
+    startRequested,
+    setStartRequested,
     error,
     busy,
     requestCode,

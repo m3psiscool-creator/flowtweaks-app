@@ -30,12 +30,13 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'about', label: 'About', icon: IconInfo }
 ]
 
-// Everything an unlicensed account can reach: the two tabs that get them to a purchase
+// Everything an unlicensed account can reach: Home (where the big Start Tweaks button lives — a
+// brand new download lands here), the two tabs that get them to a purchase
 // (Free Scan as the free taste — a real measured baseline plus locked tweaks, not just a guess —
 // and Billing to actually pay), Optimizations itself (shown blurred/locked — see
 // Optimizations.tsx — so they can see exactly what they're missing), and Account, kept only
 // because it's where sign-in lives; there's nowhere else for that to happen.
-export const UNLICENSED_ALLOWED_KEYS = new Set(['free-scan', 'billing', 'optimizations', 'account'])
+export const UNLICENSED_ALLOWED_KEYS = new Set(['home', 'free-scan', 'billing', 'optimizations', 'account'])
 
 interface SidebarProps {
   active: string
@@ -52,7 +53,7 @@ export default function Sidebar({ active, onSelect, restricted }: SidebarProps):
       </div>
       {restricted && (
         <p className="mb-4 rounded border border-ft-orange/30 bg-ft-orange/5 px-2.5 py-2 text-[11px] leading-snug text-ft-orange/80">
-          Locked — unlock a plan in Billing to access the rest of the app.
+          Locked — hit Start Tweaks on Home to create your free account and unlock the rest.
         </p>
       )}
       <ul className="flex flex-col gap-1">

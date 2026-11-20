@@ -29,7 +29,8 @@ const PAGES: Record<string, () => React.JSX.Element> = {
 
 export default function App(): React.JSX.Element {
   const [active, setActive] = useState('home')
-  const { session, hasLicense, trial, loading: accountLoading, loadingTickets } = useAccount()
+  const { session, hasLicense, trial, startTrial, startRequested, setStartRequested, loading: accountLoading, loadingTickets } =
+    useAccount()
   // While we don't yet know (session still loading, or the ticket fetch is mid-retry after a
   // cold Render backend) we neither grant nor revoke access — see useAccount's retry loop. Only
   // a completed check (success or exhausted retries) is allowed to change what's shown; a slow
@@ -38,15 +39,29 @@ export default function App(): React.JSX.Element {
   const isFullAccess = session?.user.role === 'staff' || (!!session && hasLicense)
   const ActivePage = PAGES[active] ?? Optimizations
 
-  // Licensed/staff accounts land on Home as always. Unlicensed accounts start there too (the
-  // default state above), but this immediately bounces them to Free Scan — the free, no-purchase
-  // proof of what the app actually does, and the first thing a brand new download should show.
+  // Everyone lands on Home, which carries the big Start Tweaks button. Unlicensed accounts can
+  // only reach the tabs in UNLICENSED_ALLOWED_KEYS; anything else bounces them to Free Scan.
   useEffect(() => {
     if (stillChecking) return
     if (!isFullAccess && !UNLICENSED_ALLOWED_KEYS.has(active)) {
       setActive('free-scan')
     }
   }, [stillChecking, isFullAccess, active])
+
+  // Home's Start Tweaks button, pressed while signed out: the visitor went off to create an
+  // account. Once that's done and the account check has finished, finish the job for them — start
+  // the free trial (only possible with an account) and open Optimizations.
+  useEffect(() => {
+    if (!startRequested || stillChecking || !session) return
+    setStartRequested(false)
+    if (session.user.role === 'staff' || hasLicense) {
+      setActive('optimizations')
+    } else if (trial?.state === 'none' && !trial.hasPaid) {
+      startTrial().then((ok) => setActive(ok ? 'optimizations' : 'billing'))
+    } else {
+      setActive('billing')
+    }
+  }, [startRequested, stillChecking, session, hasLicense, trial, startTrial, setStartRequested])
 
   return (
     <div className="flex h-screen flex-col bg-ft-black text-ft-white">

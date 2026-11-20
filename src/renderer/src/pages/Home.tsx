@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useSystemInfo } from '@renderer/hooks/useSystemInfo'
 import Gauge from '@renderer/components/Gauge'
 import { formatBytesToGB } from '@renderer/lib/format'
+import { useAccount } from '@renderer/hooks/useAccount'
+import { useAppNavigation } from '@renderer/context/AppNavigation'
+import TrialClock from '@renderer/components/TrialClock'
 import type { RestoreSession } from '@shared/ipc-types'
 import {
   IconComputer,
@@ -34,6 +37,92 @@ function SpecRow({
   )
 }
 
+// The one obvious thing to do in the app. What it says and where it goes depends on the account:
+//  - signed out        → "create your free account" (Account tab; finishing sign-up carries on to
+//                        the free trial and Optimizations automatically — see App.tsx)
+//  - signed in, no trial used → starts the free 3-day trial, then opens Optimizations
+//  - unlocked (paid / trial / staff) → opens Optimizations
+//  - trial over, not bought → Billing
+function StartTweaksCard(): React.JSX.Element {
+  const {
+    session,
+    hasLicense,
+    trial,
+    loading,
+    loadingTickets,
+    ticketsError,
+    busy,
+    error,
+    startTrial,
+    setStartRequested,
+    refreshTickets
+  } = useAccount()
+  const navigate = useAppNavigation()
+
+  const isStaff = session?.user.role === 'staff'
+  const checking = loading || (!!session && loadingTickets)
+  const unlocked = isStaff || (!!session && hasLicense)
+  const canStartTrial = !!session && !unlocked && trial?.state === 'none' && !trial.hasPaid
+  const trialEnded = !!session && !unlocked && trial?.state === 'expired' && !trial.hasPaid
+  const onTrial = !!session && trial?.state === 'active' && !trial.hasPaid
+
+  let label = 'Start Tweaks'
+  let hint = 'Create a free account to begin. Your 3-day free trial starts as soon as you do.'
+  let action: () => void = () => {
+    setStartRequested(true)
+    navigate('account')
+  }
+
+  if (checking) {
+    label = 'Checking your account…'
+    hint = ''
+  } else if (session && ticketsError && !unlocked) {
+    label = 'Retry'
+    hint = "Couldn't reach the server to check your account. This doesn't mean you're locked out."
+    action = refreshTickets
+  } else if (unlocked) {
+    hint = isStaff ? 'Staff account.' : "You're unlocked. Scan this PC and apply your tweaks."
+    action = () => navigate('optimizations')
+  } else if (canStartTrial) {
+    label = 'Start Tweaks'
+    hint = 'Starts your free 3-day trial — every PC tweak unlocked, no card needed.'
+    action = () => {
+      startTrial().then((ok) => navigate(ok ? 'optimizations' : 'billing'))
+    }
+  } else if (trialEnded) {
+    label = 'Unlock to Continue'
+    hint = 'Your free trial has ended and your PC was put back to normal. Buy the PC plan to unlock the tweaks again.'
+    action = () => navigate('billing')
+  } else if (session) {
+    label = 'Unlock Tweaks'
+    hint = 'Head to Billing to unlock the PC tweaks.'
+    action = () => navigate('billing')
+  }
+
+  return (
+    <section className="ft-glass mt-6 flex flex-col items-center gap-4 border-ft-orange/50 bg-ft-orange/[0.06] p-8 text-center">
+      {onTrial && trial && (
+        <p className="text-sm text-white/70">
+          Free trial ends in{' '}
+          <strong className="text-ft-orange">
+            <TrialClock remainingMs={trial.remainingMs} />
+          </strong>
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={action}
+        disabled={checking || busy}
+        className="ft-heading ft-btn-glow w-full max-w-md rounded bg-ft-orange px-8 py-5 text-2xl tracking-widest text-ft-black transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {busy ? 'Working…' : label}
+      </button>
+      {hint && <p className="max-w-md text-sm text-white/60">{hint}</p>}
+      {error && <p className="text-sm text-status-critical">{error}</p>}
+    </section>
+  )
+}
+
 export default function Home(): React.JSX.Element {
   const { specs, usage, error } = useSystemInfo()
   const [sessions, setSessions] = useState<RestoreSession[] | null>(null)
@@ -51,6 +140,8 @@ export default function Home(): React.JSX.Element {
   return (
     <div>
       <h1 className="text-4xl text-ft-orange">Home</h1>
+
+      <StartTweaksCard />
 
       {error && <p className="mt-4 text-sm text-status-critical">{error}</p>}
 
